@@ -1,8 +1,13 @@
 ﻿using IATMS.Models.Payloads;
+using IATMS.Models.Responses; //res
+using Microsoft.AspNetCore.Authentication.JwtBearer; //jwt
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.IdentityModel.Tokens; //Token
 using System.DirectoryServices;
 using System.DirectoryServices.Protocols;
 using System.Net;
+using IATMS.Components; //class jwt
+using IATMS.Configurations; //appsetting.cs
 
 namespace IATMS.Controllers
 {
@@ -25,11 +30,22 @@ namespace IATMS.Controllers
                 {
                     var forceBind = entry.NativeObject;
 
+                    // declare
+                    Res_Login result = new Res_Login();
+                    // generate token
+                    string guid = Guid.NewGuid().ToString();
+                    result.token = JwtToken.GenerateToken(Payload.username, AppSettings.AccessSecretKey, guid, System.DateTime.Now.AddMinutes(AppSettings.AccessLiftTime));
+                    var token = result.token;
+                    DateTime refresh_expire = System.DateTime.Now.AddHours(AppSettings.RefreshLiftTime);
+                    result.refresh_token = JwtToken.GenerateToken(Payload.username, AppSettings.RefreshSecretKey, guid, refresh_expire);
+                    var token_refresh = result.refresh_token;
                     return Ok(new
                     {
                         status = "success",
                         message = "correct",
-                        user = Payload.username
+                        user = Payload.username,
+                        token,
+                        token_refresh
                     });
                 }
             }
@@ -43,23 +59,7 @@ namespace IATMS.Controllers
                     details = ex.Message
                 });
             }
+           
         }
-
-
-
-        //static string GetDomainFromSignIn(string Login, string Password)
-        //{
-        //    string ldapHost = "localhost";
-        //    int ldapPort = 389;
-
-
-        //    //if (Login == "admin" && Password == "admin")
-        //    //{
-        //    //    return "correct";
-        //    //}
-        //    //else
-        //    //    return "uncorrect";
-        //}
-
     }
 }
