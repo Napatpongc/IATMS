@@ -30,15 +30,20 @@ namespace IATMS.Controllers
                 {
                     var forceBind = entry.NativeObject;
 
-                    // declare
+                    // declare object Res_Login
                     Res_Login result = new Res_Login();
-                    // generate token
+
+                    // generate AC Token
                     string guid = Guid.NewGuid().ToString();
-                    result.token = JwtToken.GenerateToken(Payload.username, AppSettings.AccessSecretKey, guid, System.DateTime.Now.AddMinutes(AppSettings.AccessLiftTime));
+                    var Lifetem_Access = System.DateTime.Now.AddMinutes(AppSettings.AccessLiftTime);
+                    result.token = JwtToken.GenerateToken(Payload.username, AppSettings.AccessSecretKey, guid, Lifetem_Access);
                     var token = result.token;
+
+                    // generate RF Token
                     DateTime refresh_expire = System.DateTime.Now.AddHours(AppSettings.RefreshLiftTime);
                     result.refresh_token = JwtToken.GenerateToken(Payload.username, AppSettings.RefreshSecretKey, guid, refresh_expire);
                     var token_refresh = result.refresh_token;
+
                     return Ok(new
                     {
                         status = "success",
