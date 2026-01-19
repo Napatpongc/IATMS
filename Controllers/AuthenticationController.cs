@@ -10,40 +10,21 @@ namespace IATMS.Controllers
     [ApiController]
     public class AuthenticationController : ControllerBase
     {
+        [HttpPost("SignIn")]
         public async Task<IActionResult> Login([FromBody] Pay_signin Payload)
         {
-            //// เปลี่ยน Domain เป็นของ มก.
-            //string ldapPath = "LDAP://nontri.ku.ac.th";
-            //string username = "b6530300155"; // หรือ username นนทรีของคุณ
-            //string password = "@FOur14822346";
-
-            //try
-            //{
-            //    // สำหรับ KU แนะนำให้ลองใช้ AuthenticationTypes.Secure ก่อน
-            //    using (DirectoryEntry entry = new DirectoryEntry(ldapPath, username, password, AuthenticationTypes.Secure))
-            //    {
-            //        // บรรทัดนี้จะพยายาม Binding กับ Server ถ้าผ่านคือ Login สำเร็จ
-            //        object nativeObject = entry.NativeObject;
-            //        Console.WriteLine("KU Login Success!");
-            //        return Ok(nativeObject);
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine("Login Failed: " + ex.Message);
-            //    return BadRequest();
-            //}
-            //}
-
             try
             {
-                string Path = "LDAP://localhost:389";
+                string ldapIp = "10.125.123.87";
+                string Path = $"LDAP://{ldapIp}:389";
+
                 string UserName = Payload.username;
                 string PassWord = Payload.password;
 
-                using (var entry = new DirectoryEntry(Path, UserName, PassWord, AuthenticationTypes.None))
+                using (var entry = new DirectoryEntry(Path, UserName, PassWord, AuthenticationTypes.Secure))
                 {
                     var forceBind = entry.NativeObject;
+
                     return Ok(new
                     {
                         status = "success",
