@@ -7,5 +7,9 @@
         public static string RefreshSecretKey { get; } = app_setting["Jwt:RefreshSecret"];
         public static int AccessLiftTime { get; } = int.Parse(app_setting["Jwt:AccessLiftTime"]);
         public static int RefreshLiftTime { get; } = int.Parse(app_setting["Jwt:RefreshLiftTime"]);
+        public static string DatabaseConnectionString { get; } = app_setting.GetConnectionString(app_setting["Env:db"]);
+        public static string LdapServer { get; } = app_setting["Ldap:Server"];
+        public static string LdapPort { get; } = app_setting["Ldap:Port"];
+        public static string LdapPath => $"LDAP://{LdapServer}:{LdapPort}";
     }
 }

@@ -1,4 +1,6 @@
-﻿using Microsoft.IdentityModel.Tokens;
+﻿using IATMS.Configurations;
+using IATMS.Models.Authentications;
+using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
@@ -29,6 +31,55 @@ namespace IATMS.Components
             var jwtToken = jwtTokenHandler.WriteToken(token);
 
             return jwtToken;
+        }
+        public static AccessTokenProps AccessTokenValidation(HttpRequest request, TokenValidationParameters _tokenValidationParameters)
+        {
+            AccessTokenProps result = new();
+            try
+            {
+                var token = request.Headers["Authorization"].ToString().Substring("Bearer".Length).Trim();
+                string secret = AppSettings.AccessSecretKey;
+
+                var jwtTokenHandler = new JwtSecurityTokenHandler();
+                var tokenInVerification = jwtTokenHandler.ValidateToken(token, _tokenValidationParameters, out var validedToken);
+
+                result.guid = tokenInVerification.Claims.FirstOrDefault(x => x.Type.Equals("jti")).Value;
+
+                result.username = Cryptography.decryptStrAndFromBase64(tokenInVerification.Claims.FirstOrDefault(x => x.Type.Equals("param1")).Value, secret, result.guid);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return result;
+        }
+        public static AccessTokenProps RefreshTokenValidation(string token, string secret)
+        {
+            AccessTokenProps result = new();
+            try
+            {
+                var jwtTokenHandler = new JwtSecurityTokenHandler();
+                var tokenInVerification = jwtTokenHandler.ValidateToken(token, new()
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.ASCII.GetBytes(secret)),
+                    ValidateIssuer = false,
+                    ValidateAudience = false,
+                    ValidateLifetime = true,
+                    RequireExpirationTime = true
+                }, out var validedToken);
+
+                result.guid = tokenInVerification.Claims.FirstOrDefault(x => x.Type.Equals("jti")).Value;
+
+                result.username = Cryptography.decryptStrAndFromBase64(tokenInVerification.Claims.FirstOrDefault(x => x.Type.Equals("param1")).Value, secret, result.guid);
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+
+            return result;
         }
     }
 }
