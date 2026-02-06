@@ -1,9 +1,10 @@
 ﻿using AppName_API.Models.Responses.Authentication;
 using IATMS.Configurations;
+using IATMS.Models.Payloads;
 using IATMS.Models.Responses;
+using Microsoft.Data.SqlClient;
 using System.Data;
 using System.Runtime;
-using Microsoft.Data.SqlClient;
 
 namespace IATMS.contextDB
 {
@@ -38,7 +39,7 @@ namespace IATMS.contextDB
                     result.profile.Team = rd["Team"]?.ToString();
                     result.profile.Work_Place = rd["Work_Place"]?.ToString();
                     result.profile.email = rd["email"]?.ToString();
-                    result.profile.role_name = rd["role_name"]?.ToString();
+                    result.profile.role_id = rd["role_id"]?.ToString();
 
 
                     // --- 2. Mapping Role & Menus (ตาม Res_Role) ---
@@ -140,78 +141,65 @@ namespace IATMS.contextDB
                 throw;
             }
         }
-        //public static Res_Only_Profile GetProfile(string username)
-        //{
-        //    Res_Only_Profile result = new();
-        //    result.role = new Res_Role();
-        //    result.profile = new Res_Profile();
-        //    try
-        //    {
-        //        using var con = new SqlConnection(connectionString);
-        //        using var cmd = new SqlCommand("dbo.getProfile", con);
 
-        //        cmd.CommandTimeout = Timeout;
-        //        cmd.CommandType = CommandType.StoredProcedure;
+        public static List<Res_Lov> GetListofvalues(string keyword)
+        {
+            
+            var results = new List<Res_Lov>();
+            try
+            {
+                using var con = new SqlConnection(connectionString);
+                using var cmd = new SqlCommand("dbo.getLov", con);
 
-        //        cmd.Parameters.Add("@OA_User", SqlDbType.VarChar, 50).Value = username;
+                cmd.CommandTimeout = Timeout;
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@keyword", SqlDbType.VarChar, 255).Value = keyword;
 
-        //        con.Open();
-        //        var rd = cmd.ExecuteReader();
-        //        while (rd.Read())
-        //        {
-        //            // --- 1. Mapping Profile (ตาม Res_Profile) ---
-        //            result.profile.oa_user = rd["oa_user"]?.ToString();
-        //            result.profile.Name_en = rd["Name_en"]?.ToString();
-        //            result.profile.Name_th = rd["Name_th"]?.ToString();
-        //            result.profile.division_code = rd["division_code"]?.ToString();
-        //            result.profile.Team = rd["Team"]?.ToString();
-        //            result.profile.Work_Place = rd["Work_Place"]?.ToString();
-        //            result.profile.email = rd["email"]?.ToString();
-        //            result.profile.role_name = rd["role_name"]?.ToString();
+                con.Open();
+                var rd = cmd.ExecuteReader();
+                while (rd.Read())
+                {
+                    var item = new Res_Lov();
 
+                    item.fieldName = rd["field_name"]?.ToString();
+                    item.code = rd["code"]?.ToString();
+                    item.description = rd["description"]?.ToString();
+                    item.condition = rd["condition"]?.ToString();
+                    item.orderIndex = rd["order_index"] == DBNull.Value ? 0 : Convert.ToInt32(rd["order_index"]);
+                    item.isActive = Convert.ToInt32(rd["is_active"]) == 1;
 
-        //            // --- 2. Mapping Role & Menus (ตาม Res_Role) ---
-        //            result.role.menu_attendance = rd["menu_attendance"] != DBNull.Value && Convert.ToBoolean(rd["menu_attendance"]);
-        //            result.role.menu_report = rd["menu_report"] != DBNull.Value && Convert.ToBoolean(rd["menu_report"]);
-        //            result.role.menu_admin = rd["menu_admin"] != DBNull.Value && Convert.ToBoolean(rd["menu_admin"]);
-        //            result.role.menu_setup = rd["menu_setup"] != DBNull.Value && Convert.ToBoolean(rd["menu_setup"]);
+                    results.Add(item);
+                }
+                rd.Close();
+                cmd.Dispose();
+                con.Close();
 
-        //            // --- 3. Mapping Functions (ตาม Res_Role) ---
-        //            result.role.func_approve = rd["func_approve"] != DBNull.Value && Convert.ToBoolean(rd["func_approve"]);
-        //            result.role.func_cico = rd["func_cico"] != DBNull.Value && Convert.ToBoolean(rd["func_cico"]);
-        //            result.role.func_rp_attendance = rd["func_rp_attendance"] != DBNull.Value && Convert.ToBoolean(rd["func_rp_attendance"]);
-        //            result.role.func_rp_work_hours = rd["func_rp_work_hours"] != DBNull.Value && Convert.ToBoolean(rd["func_rp_work_hours"]);
-        //            result.role.func_rp_compensation = rd["func_rp_compensation"] != DBNull.Value && Convert.ToBoolean(rd["func_rp_compensation"]);
+                return results;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+        public static async Task PostListofvalues(string fieldName, string code, string description, string condition, int orderIndex, bool isActive, string username )
+        { 
+            using var conn = new SqlConnection(connectionString);
+            using var cmd = new SqlCommand("dbo.postLov", conn);
+            cmd.CommandTimeout = Timeout;
+            cmd.CommandType = CommandType.StoredProcedure;
 
-        //            // --- 4. Mapping Menu Spares (1-5) ---
-        //            result.role.menu_spare1 = rd["menu_spare1"] != DBNull.Value && Convert.ToBoolean(rd["menu_spare1"]);
-        //            result.role.menu_spare2 = rd["menu_spare2"] != DBNull.Value && Convert.ToBoolean(rd["menu_spare2"]);
-        //            result.role.menu_spare3 = rd["menu_spare3"] != DBNull.Value && Convert.ToBoolean(rd["menu_spare3"]);
-        //            result.role.menu_spare4 = rd["menu_spare4"] != DBNull.Value && Convert.ToBoolean(rd["menu_spare4"]);
-        //            result.role.menu_spare5 = rd["menu_spare5"] != DBNull.Value && Convert.ToBoolean(rd["menu_spare5"]);
+            // parameters
+            cmd.Parameters.Add("@field_name", SqlDbType.VarChar, 50).Value = fieldName;
+            cmd.Parameters.Add("@code", SqlDbType.VarChar, 50).Value = code;
+            cmd.Parameters.Add("@description", SqlDbType.VarChar, 255).Value = description;
+            cmd.Parameters.Add("@condition", SqlDbType.VarChar, 255).Value = condition;
+            cmd.Parameters.Add("@order_index", SqlDbType.Int).Value = orderIndex;
+            cmd.Parameters.Add("@is_active", SqlDbType.Bit).Value = isActive;
+            cmd.Parameters.Add("@username", SqlDbType.VarChar, 50).Value = username;
 
-        //            // --- 5. Mapping Function Spares (1-10) ---
-        //            result.role.func_spare1 = rd["func_spare1"] != DBNull.Value && Convert.ToBoolean(rd["func_spare1"]);
-        //            result.role.func_spare2 = rd["func_spare2"] != DBNull.Value && Convert.ToBoolean(rd["func_spare2"]);
-        //            result.role.func_spare3 = rd["func_spare3"] != DBNull.Value && Convert.ToBoolean(rd["func_spare3"]);
-        //            result.role.func_spare4 = rd["func_spare4"] != DBNull.Value && Convert.ToBoolean(rd["func_spare4"]);
-        //            result.role.func_spare5 = rd["func_spare5"] != DBNull.Value && Convert.ToBoolean(rd["func_spare5"]);
-        //            result.role.func_spare6 = rd["func_spare6"] != DBNull.Value && Convert.ToBoolean(rd["func_spare6"]);
-        //            result.role.func_spare7 = rd["func_spare7"] != DBNull.Value && Convert.ToBoolean(rd["func_spare7"]);
-        //            result.role.func_spare8 = rd["func_spare8"] != DBNull.Value && Convert.ToBoolean(rd["func_spare8"]);
-        //            result.role.func_spare9 = rd["func_spare9"] != DBNull.Value && Convert.ToBoolean(rd["func_spare9"]);
-        //            result.role.func_spare10 = rd["func_spare10"] != DBNull.Value && Convert.ToBoolean(rd["func_spare10"]);
-        //        }
-        //        rd.Close();
-        //        cmd.Dispose();
-        //        con.Close();
-
-        //        return result;
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        throw;
-        //    }
-        //}
+            await conn.OpenAsync();
+            await cmd.ExecuteNonQueryAsync();
+ 
+        }
     }
 }

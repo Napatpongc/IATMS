@@ -37,7 +37,6 @@ namespace IATMS.Controllers
             string UserName = Payload.username;
             string PassWord = Payload.password;
 
-
             //try
             //{
             //    using (var entry = new DirectoryEntry(Path, UserName, PassWord, AuthenticationTypes.Secure))
@@ -60,7 +59,7 @@ namespace IATMS.Controllers
             Res_Login result = new Res_Login();
             // generate AC Token
             string guid = Guid.NewGuid().ToString();
-            var Lifetem_Access = System.DateTime.Now.AddMinutes(AppSettings.AccessLiftTime);
+            var Lifetem_Access = System.DateTime.Now.AddHours(AppSettings.AccessLiftTime);
             result.token = JwtToken.GenerateToken(UserName, AppSettings.AccessSecretKey, guid, Lifetem_Access);
 
             // generate RF Token

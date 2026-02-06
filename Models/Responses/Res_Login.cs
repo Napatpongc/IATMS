@@ -50,7 +50,7 @@ namespace AppName_API.Models.Responses.Authentication
         public string Team { get; set; }
         public string Work_Place { get; set; }
         public string email { get; set; }
-        public string role_name { get; set; }
+        public string role_id { get; set; }
 
     }
 }
