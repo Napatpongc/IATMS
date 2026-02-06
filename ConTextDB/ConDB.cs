@@ -154,7 +154,9 @@ namespace IATMS.contextDB
             {
                 using var con = new SqlConnection(connectionString);
                 using var cmd = new SqlCommand("dbo.getRoles", con);
-
+        //        using var con = new SqlConnection(connectionString);
+        //        using var cmd = new SqlCommand("dbo.getProfile", con);
+        //        using var con = new SqlConnection(connectionString);
                 cmd.CommandTimeout = Timeout;
                 cmd.CommandType = CommandType.StoredProcedure;
 
@@ -217,18 +219,18 @@ namespace IATMS.contextDB
                 cmd.Parameters.Add("@menu_report", SqlDbType.Bit).Value = data.menu_report;
                 cmd.Parameters.Add("@menu_admin", SqlDbType.Bit).Value = data.menu_admin;
                 cmd.Parameters.Add("@menu_setup", SqlDbType.Bit).Value = data.menu_setup;
-
+                cmd.Parameters.Add("@menu_admin", SqlDbType.Bit).Value = data.menu_admin;
                 // --- 3. การจัดการฟังก์ชัน (Function Permissions) ---
                 cmd.Parameters.Add("@func_approve", SqlDbType.Bit).Value = data.func_approve;
                 cmd.Parameters.Add("@func_cico", SqlDbType.Bit).Value = data.func_cico;
                 cmd.Parameters.Add("@func_rp_attendance", SqlDbType.Bit).Value = data.func_rp_attendance;
                 cmd.Parameters.Add("@func_rp_work_hours", SqlDbType.Bit).Value = data.func_rp_work_hours;
                 cmd.Parameters.Add("@func_rp_compensation", SqlDbType.Bit).Value = data.func_rp_compensation;
-
+                cmd.Parameters.Add("@func_rp_work_hours", SqlDbType.Bit).Value = data.func_rp_work_hours;
                 // --- 4. สถานะและผู้บันทึก (Status & Audit) ---
                 cmd.Parameters.Add("@is_active", SqlDbType.Bit).Value = data.is_active;
                 cmd.Parameters.Add("@username", SqlDbType.VarChar, 50).Value = data.username;
-
+                cmd.Parameters.Add("@is_active", SqlDbType.Bit).Value = data.is_active;
                 // --- 5. ข้อมูลสำรอง (Spare Fields) ---
                 // ใช้ (object)?? DBNull.Value เพื่อรองรับค่า Nullable จาก Payload
                 cmd.Parameters.Add("@menu_spare1", SqlDbType.Bit).Value = (object)data.menu_spare1 ?? DBNull.Value;
@@ -236,7 +238,7 @@ namespace IATMS.contextDB
                 cmd.Parameters.Add("@menu_spare3", SqlDbType.Bit).Value = (object)data.menu_spare3 ?? DBNull.Value;
                 cmd.Parameters.Add("@menu_spare4", SqlDbType.Bit).Value = (object)data.menu_spare4 ?? DBNull.Value;
                 cmd.Parameters.Add("@menu_spare5", SqlDbType.Bit).Value = (object)data.menu_spare5 ?? DBNull.Value;
-
+                cmd.Parameters.Add("@menu_spare4", SqlDbType.Bit).Value = (object)data.menu_spare4 ?? DBNull.Value;
                 cmd.Parameters.Add("@func_spare1", SqlDbType.Bit).Value = (object)data.func_spare1 ?? DBNull.Value;
                 cmd.Parameters.Add("@func_spare2", SqlDbType.Bit).Value = (object)data.func_spare2 ?? DBNull.Value;
                 cmd.Parameters.Add("@func_spare3", SqlDbType.Bit).Value = (object)data.func_spare3 ?? DBNull.Value;
@@ -247,10 +249,10 @@ namespace IATMS.contextDB
                 cmd.Parameters.Add("@func_spare8", SqlDbType.Bit).Value = (object)data.func_spare8 ?? DBNull.Value;
                 cmd.Parameters.Add("@func_spare9", SqlDbType.Bit).Value = (object)data.func_spare9 ?? DBNull.Value;
                 cmd.Parameters.Add("@func_spare10", SqlDbType.Bit).Value = (object)data.func_spare10 ?? DBNull.Value;
-
+                cmd.Parameters.Add("@func_spare9", SqlDbType.Bit).Value = (object)data.func_spare9 ?? DBNull.Value;
                 await con.OpenAsync();
                 await cmd.ExecuteNonQueryAsync(); // ใช้สำหรับ SP ที่ไม่มีการ Return ข้อมูลกลับ
-
+                await con.OpenAsync();
                 con.Close();
                 return true;
             }
@@ -260,5 +262,9 @@ namespace IATMS.contextDB
             }
         }
 
+        }
+
+ 
+        }
     }
 }

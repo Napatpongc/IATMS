@@ -37,7 +37,6 @@ namespace IATMS.Controllers
             string UserName = Payload.username;
             string PassWord = Payload.password;
 
-
             //try
             //{
             //    using (var entry = new DirectoryEntry(Path, UserName, PassWord, AuthenticationTypes.Secure))
