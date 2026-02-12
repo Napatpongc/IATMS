@@ -28,7 +28,9 @@ namespace IATMS.Controllers
         {
             _logger = logger;
         }
-        [HttpPost("SignIn")]
+
+
+        [HttpPost("signin")]
         public async Task<IActionResult> Login([FromBody] Pay_signin Payload)
         {
 
@@ -36,34 +38,59 @@ namespace IATMS.Controllers
 
             string UserName = Payload.username;
             string PassWord = Payload.password;
+            bool isAuthenticated = false;
+            //ldap
+            try
+            {
+                using (var entry = new DirectoryEntry(Path, UserName, PassWord, AuthenticationTypes.Secure))
+                {
+                    var forceBind = entry.NativeObject;
+                    isAuthenticated = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"LDAP failed, trying MockData: {ex.Message}");
+            }
+            Res_Role userRole = null;
+            Res_Profile userProfile = null;
 
-            //try
-            //{
-            //    using (var entry = new DirectoryEntry(Path, UserName, PassWord, AuthenticationTypes.Secure))
-            //    {
-            //        var forceBind = entry.NativeObject;
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine("Uncorrect: " + ex.Message);
-            //    return Unauthorized(new
-            //    {
-            //        status = "error",
-            //        message = "uncorrect",
-            //        details = ex.Message
-            //    });
-            //}
+            if (isAuthenticated)
+            {
+                // กรณีผ่าน LDAP: ดึงข้อมูลจาก DB จริง
+                Res_Login dbProfile = ConDB.GetSigninUserProfile(UserName);
+                userRole = dbProfile.role;
+                userProfile = dbProfile.profile;
+            }
+            else
+            {
+                // กรณี LDAP พลาด: ค้นหาใน MockData
+                var dummy = MockData.Users.FirstOrDefault(u =>
+                    u.username.Equals(UserName, StringComparison.OrdinalIgnoreCase) &&
+                    u.password == PassWord);
+
+                if (dummy != null)
+                {
+                    userRole = dummy.role;
+                    userProfile = dummy.result; // ใช้ .result ตามที่แจ้งมา
+                }
+            }
+
+            // ตรวจสอบว่ามี User หรือไม่
+            if (userProfile == null || string.IsNullOrEmpty(userProfile.oa_user))
+            {
+                return Unauthorized(new { status = "error", message = "Invalid username or password." });
+            }
 
             // declare object Res_Login
             Res_Login result = new Res_Login();
             // generate AC Token
             string guid = Guid.NewGuid().ToString();
-            var Lifetem_Access = System.DateTime.Now.AddHours(AppSettings.AccessLiftTime);
+            var Lifetem_Access = System.DateTime.Now.AddMinutes(AppSettings.AccessLiftTime);
             result.token = JwtToken.GenerateToken(UserName, AppSettings.AccessSecretKey, guid, Lifetem_Access);
 
             // generate RF Token
-            DateTime refresh_expire = System.DateTime.Now.AddHours(AppSettings.RefreshLiftTime);
+            DateTime refresh_expire = System.DateTime.Now.AddMinutes(AppSettings.RefreshLiftTime);
             result.refresh_token = JwtToken.GenerateToken(UserName, AppSettings.RefreshSecretKey, guid, refresh_expire);
 
             Res_Login profileRole = ConDB.GetSigninUserProfile(UserName);
@@ -148,7 +175,80 @@ namespace IATMS.Controllers
             return Ok(result);
 
         }
-        
+
+        [HttpPost("user_profile_dummy")]
+
+        public async Task<IActionResult> dummyUser([FromBody] Pay_dummy Payload)
+
+        {
+
+            if (Payload == null || string.IsNullOrWhiteSpace(Payload.username))
+
+                return BadRequest(new { message = "username is required" });
+
+            var username = Payload.username.Trim();
+
+            var user = _dummyUsers.FirstOrDefault(u =>
+
+                u.username.Equals(username, StringComparison.OrdinalIgnoreCase));
+
+            if (user == null)
+
+            {
+
+                // จะใช้ ErrorMessage.GetMessage(2002) ก็ได้ ถ้าคุณอยากให้ format เหมือนของเดิม
+
+                // Message msg = ErrorMessage.GetMessage(2002);
+
+                // return BadRequest(msg);
+
+                return NotFound(new { message = "user not found" });
+
+            }
+
+            // สร้าง Res_Login เหมือน SignIn
+
+            Res_Login result = new Res_Login();
+
+            string guid = Guid.NewGuid().ToString();
+
+            var accessExpire = DateTime.Now.AddHours(AppSettings.AccessLiftTime);
+
+            result.token = JwtToken.GenerateToken(user.username, AppSettings.AccessSecretKey, guid, accessExpire);
+
+            DateTime refresh_expire = DateTime.Now.AddHours(AppSettings.RefreshLiftTime);
+
+            result.refresh_token = JwtToken.GenerateToken(user.username, AppSettings.RefreshSecretKey, guid, refresh_expire);
+
+            result.role = user.role;
+
+            result.profile = user.profile;
+
+            //// (ถ้าคุณอยากเก็บ refresh token ลง DB ให้เหมือน SignIn)
+
+            //try
+
+            //{
+
+            //    await ConDB.tokenRefresh(user.username, result.refresh_token, refresh_expire);
+
+            //}
+
+            //catch (Exception ex)
+
+            //{
+
+            //    _logger.LogError(ex, exception_msg + ex.Message);
+
+            //    return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+
+            //}
+
+            return Ok(result);
+
+        }
+
+
     }
-    
+
 }
