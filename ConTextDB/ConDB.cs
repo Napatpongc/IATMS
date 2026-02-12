@@ -409,25 +409,7 @@ namespace IATMS.contextDB
                 throw;
             }
         }
-        public static async Task PostListofvalues(string fieldName, string code, string description, string condition, int orderIndex, bool isActive, string username)
-        {
-            using var conn = new SqlConnection(connectionString);
-            using var cmd = new SqlCommand("dbo.postLov", conn);
-            cmd.CommandTimeout = Timeout;
-            cmd.CommandType = CommandType.StoredProcedure;
-
-            // parameters
-            cmd.Parameters.Add("@field_name", SqlDbType.VarChar, 50).Value = fieldName;
-            cmd.Parameters.Add("@code", SqlDbType.VarChar, 50).Value = code;
-            cmd.Parameters.Add("@description", SqlDbType.VarChar, 255).Value = description;
-            cmd.Parameters.Add("@condition", SqlDbType.VarChar, 255).Value = condition;
-            cmd.Parameters.Add("@order_index", SqlDbType.Int).Value = orderIndex;
-            cmd.Parameters.Add("@is_active", SqlDbType.Bit).Value = isActive;
-            cmd.Parameters.Add("@username", SqlDbType.VarChar, 50).Value = username;
-
-            await conn.OpenAsync();
-            await cmd.ExecuteNonQueryAsync();
-            conn.Close();
+    
 
         public static async Task PostHolidays(DateOnly holydayDate, string holydayName, bool isActive, string username)
         {
@@ -495,45 +477,6 @@ namespace IATMS.contextDB
         }
 
 
-
-        public static List<Res_Lov> GetListofvalues(string keyword)
-        {
-
-            var results = new List<Res_Lov>();
-            try
-            {
-                using var con = new SqlConnection(connectionString);
-                using var cmd = new SqlCommand("dbo.getLov", con);
-
-                cmd.CommandTimeout = Timeout;
-                cmd.CommandType = CommandType.StoredProcedure;
-                cmd.Parameters.Add("@keyword", SqlDbType.VarChar, 255).Value = keyword;
-
-                con.Open();
-                var rd = cmd.ExecuteReader();
-                while (rd.Read())
-                {
-                    var item = new Res_Lov();
-
-                    item.fieldName = rd["field_name"]?.ToString();
-                    item.code = rd["code"]?.ToString();
-                    item.description = rd["description"]?.ToString();
-                    item.condition = rd["condition"]?.ToString();
-                    item.orderIndex = rd["order_index"] == DBNull.Value ? 0 : Convert.ToInt32(rd["order_index"]);
-                    item.isActive = Convert.ToInt32(rd["is_active"]) == 1;
-
-                    results.Add(item);
-                }
-                rd.Close();
-                cmd.Dispose();
-                con.Close();
-
-            }
-            catch (Exception ex)
-            {
-                throw;
-            }
-        }
         public static List<Res_ALL_Profile> GetUserManage(string keyword)
         {
             List<Res_ALL_Profile> results = new();
@@ -648,15 +591,11 @@ namespace IATMS.contextDB
             }
         }
     }
-
-
-
-    
-    }
+  
+}
     
     
-        
  
         
    
-}
+
