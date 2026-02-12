@@ -10,10 +10,10 @@ namespace IATMS.Models.Payloads
         [Required]
         [MaxLength(100, ErrorMessage = "Maximum length")]
         public string code { get; set; }
-        [Required]
+        
         [MaxLength(100, ErrorMessage = "Maximum length")]
         public string description { get; set; }
-        [Required]
+        
         [MaxLength(100, ErrorMessage = "Maximum length")]
         public string condition { get; set; }
         

@@ -1,9 +1,7 @@
-﻿using AppName_API.Models.Responses.Authentication;
-using IATMS.Components;
+﻿using IATMS.Components;
 using IATMS.contextDB;
 using IATMS.Models.Authentications;
 using IATMS.Models.Payloads;
-using IATMS.Models.Responses;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -12,20 +10,23 @@ using Microsoft.IdentityModel.Tokens;
 using Microsoft.Data.SqlClient;
 
 
+
 namespace IATMS.Controllers
 {
     [Route("api")]
     [ApiController]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    public class ListOfValuesController : ControllerBase
+
+
+    public class HolidayController : ControllerBase
     {
         private readonly TokenValidationParameters _tokenValidationParameters;
-        public ListOfValuesController(TokenValidationParameters tokenValidationParameters)
+        public HolidayController(TokenValidationParameters tokenValidationParameters)
         {
             _tokenValidationParameters = tokenValidationParameters;
         }
-        [HttpGet("getLov")]
-        public async Task<IActionResult> getListofvalue([FromQuery] searchLov q)
+        [HttpGet("getHolidays")]
+        public async Task<IActionResult> getHolidays([FromQuery] getHolidays q)
         {
             AccessTokenProps info;
             try
@@ -36,15 +37,13 @@ namespace IATMS.Controllers
             {
                 return Unauthorized();
             }
-
-            var k = (q?.keyword ?? "").Trim();   
-            var result = ConDB.GetListofvalues(k);
+            var result = ConDB.GetHolidays(q.isActive, q.yearSearch);
             return Ok(result);
 
         }
 
-        [HttpPost("postLov")]
-        public async Task<IActionResult> postListofvalue([FromBody] ListOfValues Payload)
+        [HttpPost("postHolidays")]
+        public async Task<IActionResult> postHolidays([FromBody] postHolidays Payload)
         {
             AccessTokenProps info;
             try
@@ -57,7 +56,7 @@ namespace IATMS.Controllers
             }
             try
             {
-                await ConDB.PostListofvalues(Payload.fieldName, Payload.code, Payload.description, Payload.condition, Payload.orderIndex, Payload.isActive, info.username);
+                await ConDB.PostHolidays(Payload.holidayDate,Payload.holidayName,Payload.isActive, info.username);
                 return Ok(new { Success = true });
 
             }
@@ -78,7 +77,39 @@ namespace IATMS.Controllers
 
         }
 
+        [HttpGet("getHolidayYearRange")]
+        public async Task<IActionResult> getHolidayYearRange()
+        {
+            AccessTokenProps info;
+            try
+            {
+                info = JwtToken.AccessTokenValidation(Request, _tokenValidationParameters);
+            }
+            catch (Exception ex)
+            {
+                return Unauthorized();
+            }
+            var result = ConDB.GetHolidayYearRange();
+            return Ok(result);
 
+        }
+
+        [HttpGet("getHolidayYears")]
+        public async Task<IActionResult> getHolidayYears()
+        {
+            AccessTokenProps info;
+            try
+            {
+                info = JwtToken.AccessTokenValidation(Request, _tokenValidationParameters);
+            }
+            catch (Exception ex)
+            {
+                return Unauthorized();
+            }
+            var result = ConDB.GetHolidayYears();
+            return Ok(result);
+
+        }
     }
 
 
