@@ -4,14 +4,19 @@ using IATMS.Components;
 using IATMS.Configurations;
 using IATMS.Models.Authentications;
 using IATMS.Models.Payloads;
-using IATMS.Models.Responses;
 using IATMS.Models.Responses.Holidays;
+using IATMS.Models.Payloads.UserManage;
+using IATMS.Models.Responses;
+using IATMS.Models.Responses.DropDown;
 using IATMS.Models.Responses.Role;
+using IATMS.Models.Responses.User_Manage;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 using System.Data;
 using System.Runtime;
+using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 namespace IATMS.contextDB
 {
     public class ConDB
@@ -215,7 +220,6 @@ namespace IATMS.contextDB
                 cmd.CommandType = CommandType.StoredProcedure;
 
                 // --- 1. ข้อมูลหลัก ---
-
                 cmd.Parameters.Add("@role_id", SqlDbType.VarChar, 50).Value = data.role_id;
 
                 cmd.Parameters.Add("@description", SqlDbType.VarChar, 255).Value = (object)data.description ?? DBNull.Value;
@@ -223,17 +227,13 @@ namespace IATMS.contextDB
                 cmd.Parameters.Add("@role_level", SqlDbType.Int).Value = data.role_level;
 
                 // --- 2. การจัดการสิทธิ์เมนู ---
-
                 cmd.Parameters.Add("@menu_attendance", SqlDbType.Bit).Value = data.menu_attendance;
 
                 cmd.Parameters.Add("@menu_report", SqlDbType.Bit).Value = data.menu_report;
-
-                cmd.Parameters.Add("@menu_admin", SqlDbType.Bit).Value = data.menu_admin;
-
+                cmd.Parameters.Add("@menu_admin", SqlDbType.Bit).Value = data.menu_admin; 
                 cmd.Parameters.Add("@menu_setup", SqlDbType.Bit).Value = data.menu_setup;
 
                 // --- 3. การจัดการฟังก์ชัน ---
-
                 cmd.Parameters.Add("@func_approve", SqlDbType.Bit).Value = data.func_approve;
 
                 cmd.Parameters.Add("@func_cico", SqlDbType.Bit).Value = data.func_cico;
@@ -245,21 +245,16 @@ namespace IATMS.contextDB
                 cmd.Parameters.Add("@func_rp_compensation", SqlDbType.Bit).Value = data.func_rp_compensation;
 
                 // --- 4. สถานะและผู้บันทึก ---
-
-                cmd.Parameters.Add("@is_active", SqlDbType.Bit).Value = data.is_active;
-
+                cmd.Parameters.Add("@is_active", SqlDbType.Bit).Value = data.is_active; 
                 cmd.Parameters.Add("@username", SqlDbType.VarChar, 50).Value = data.username;
 
                 // --- 5. ข้อมูลสำรอง (Spare Fields) ---
-
                 cmd.Parameters.Add("@menu_spare1", SqlDbType.Bit).Value = (object)data.menu_spare1 ?? DBNull.Value;
 
                 cmd.Parameters.Add("@menu_spare2", SqlDbType.Bit).Value = (object)data.menu_spare2 ?? DBNull.Value;
 
                 cmd.Parameters.Add("@menu_spare3", SqlDbType.Bit).Value = (object)data.menu_spare3 ?? DBNull.Value;
-
-                cmd.Parameters.Add("@menu_spare4", SqlDbType.Bit).Value = (object)data.menu_spare4 ?? DBNull.Value;
-
+                cmd.Parameters.Add("@menu_spare4", SqlDbType.Bit).Value = (object)data.menu_spare4 ?? DBNull.Value; 
                 cmd.Parameters.Add("@menu_spare5", SqlDbType.Bit).Value = (object)data.menu_spare5 ?? DBNull.Value;
 
                 cmd.Parameters.Add("@func_spare1", SqlDbType.Bit).Value = (object)data.func_spare1 ?? DBNull.Value;
@@ -277,15 +272,11 @@ namespace IATMS.contextDB
                 cmd.Parameters.Add("@func_spare7", SqlDbType.Bit).Value = (object)data.func_spare7 ?? DBNull.Value;
 
                 cmd.Parameters.Add("@func_spare8", SqlDbType.Bit).Value = (object)data.func_spare8 ?? DBNull.Value;
-
-                cmd.Parameters.Add("@func_spare9", SqlDbType.Bit).Value = (object)data.func_spare9 ?? DBNull.Value;
-
+                cmd.Parameters.Add("@func_spare9", SqlDbType.Bit).Value = (object)data.func_spare9 ?? DBNull.Value; 
                 cmd.Parameters.Add("@func_spare10", SqlDbType.Bit).Value = (object)data.func_spare10 ?? DBNull.Value;
 
                 await con.OpenAsync();
-
                 await cmd.ExecuteNonQueryAsync();
-
                 con.Close();
 
                 return true;
@@ -418,6 +409,25 @@ namespace IATMS.contextDB
                 throw;
             }
         }
+        public static async Task PostListofvalues(string fieldName, string code, string description, string condition, int orderIndex, bool isActive, string username)
+        {
+            using var conn = new SqlConnection(connectionString);
+            using var cmd = new SqlCommand("dbo.postLov", conn);
+            cmd.CommandTimeout = Timeout;
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            // parameters
+            cmd.Parameters.Add("@field_name", SqlDbType.VarChar, 50).Value = fieldName;
+            cmd.Parameters.Add("@code", SqlDbType.VarChar, 50).Value = code;
+            cmd.Parameters.Add("@description", SqlDbType.VarChar, 255).Value = description;
+            cmd.Parameters.Add("@condition", SqlDbType.VarChar, 255).Value = condition;
+            cmd.Parameters.Add("@order_index", SqlDbType.Int).Value = orderIndex;
+            cmd.Parameters.Add("@is_active", SqlDbType.Bit).Value = isActive;
+            cmd.Parameters.Add("@username", SqlDbType.VarChar, 50).Value = username;
+
+            await conn.OpenAsync();
+            await cmd.ExecuteNonQueryAsync();
+            conn.Close();
 
         public static async Task PostHolidays(DateOnly holydayDate, string holydayName, bool isActive, string username)
         {
@@ -446,29 +456,7 @@ namespace IATMS.contextDB
 
         }
 
-        public static Res_HolidayYearRange GetHolidayYearRange()
-        {
-            var result = new Res_HolidayYearRange();
-
-            using var con = new SqlConnection(connectionString);
-            using var cmd = new SqlCommand("dbo.getHolidayYearRange", con)
-            {
-                CommandTimeout = Timeout,
-                CommandType = CommandType.StoredProcedure
-            };
-
-            con.Open();
-
-            using var rd = cmd.ExecuteReader();
-            if (rd.Read())
-            {
-                // ชื่อคอลัมน์ต้องตรงกับที่ SP SELECT ออกมา: minYear, maxYear
-                result.minYear = rd["minYear"] == DBNull.Value ? 0 : Convert.ToInt32(rd["minYear"]);
-                result.maxYear = rd["maxYear"] == DBNull.Value ? 0 : Convert.ToInt32(rd["maxYear"]);
-            }
-
-            return result;
-        }
+       
 
         public static List <Res_HolidayYears> GetHolidayYears ()
         {
@@ -491,7 +479,50 @@ namespace IATMS.contextDB
                     // ชื่อคอลัมน์ต้องตรงกับที่ SP SELECT ออกมา: minYear, maxYear
                     item.Year = rd["year"] == DBNull.Value ? 0 : Convert.ToInt32(rd["year"]);
                     results.Add(item);
+                }
+                rd.Close();
+                cmd.Dispose();
+                con.Close();
+                
+                
+            }catch (Exception ex)
+            {
+                throw;
+            }
 
+
+            return results;
+        }
+
+
+
+        public static List<Res_Lov> GetListofvalues(string keyword)
+        {
+
+            var results = new List<Res_Lov>();
+            try
+            {
+                using var con = new SqlConnection(connectionString);
+                using var cmd = new SqlCommand("dbo.getLov", con);
+
+                cmd.CommandTimeout = Timeout;
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@keyword", SqlDbType.VarChar, 255).Value = keyword;
+
+                con.Open();
+                var rd = cmd.ExecuteReader();
+                while (rd.Read())
+                {
+                    var item = new Res_Lov();
+
+                    item.fieldName = rd["field_name"]?.ToString();
+                    item.code = rd["code"]?.ToString();
+                    item.description = rd["description"]?.ToString();
+                    item.condition = rd["condition"]?.ToString();
+                    item.orderIndex = rd["order_index"] == DBNull.Value ? 0 : Convert.ToInt32(rd["order_index"]);
+                    item.isActive = Convert.ToInt32(rd["is_active"]) == 1;
+
+                    results.Add(item);
                 }
                 rd.Close();
                 cmd.Dispose();
@@ -502,10 +533,130 @@ namespace IATMS.contextDB
             {
                 throw;
             }
+        }
+        public static List<Res_ALL_Profile> GetUserManage(string keyword)
+        {
+            List<Res_ALL_Profile> results = new();
+            try
+            {
+                using var con = new SqlConnection(connectionString);
+                using var cmd = new SqlCommand("dbo.getUserManage", con);
 
-            return results;
+                cmd.CommandTimeout = Timeout;
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.Add("@Keyword", SqlDbType.VarChar, 100).Value = (object)keyword ?? DBNull.Value;
+
+                con.Open();
+                using var rd = cmd.ExecuteReader();
+                while (rd.Read())
+                {
+                    var item = new Res_ALL_Profile
+                    {
+                        oa_user = rd["oa_user"]?.ToString(),
+                        first_name_th = rd["first_name_th"]?.ToString(),
+                        last_name_th = rd["last_name_th"]?.ToString(),
+                        first_name_en = rd["first_name_en"]?.ToString(),
+                        last_name_en = rd["last_name_en"]?.ToString(),
+                        email = rd["email"]?.ToString(),
+
+                        role = rd["role"]?.ToString(),
+                        team = rd["team"]?.ToString(),
+                        division = rd["division"]?.ToString(),
+                        work_place = rd["work_place"]?.ToString(),
+
+                        is_active = rd["is_active"] != DBNull.Value && Convert.ToBoolean(rd["is_active"])
+                    };
+
+                    results.Add(item);
+                }
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
+        public static async Task<bool> PostUserProfile(Pay_UserManage data)
+        {
+            try
+            {
+                using var con = new SqlConnection(connectionString);
+                using var cmd = new SqlCommand("dbo.postUserProfile", con);
+
+                cmd.CommandTimeout = Timeout;
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                // Binding Parameters ให้ตรงกับชื่อและลำดับใน Stored Procedure
+                cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = (object)data.oa_user ?? DBNull.Value;
+                cmd.Parameters.Add("@first_name_th", SqlDbType.NVarChar, 100).Value = (object)data.first_name_th ?? DBNull.Value;
+                cmd.Parameters.Add("@last_name_th", SqlDbType.NVarChar, 100).Value = (object)data.last_name_th ?? DBNull.Value;
+                cmd.Parameters.Add("@first_name_en", SqlDbType.VarChar, 100).Value = (object)data.first_name_en ?? DBNull.Value;
+                cmd.Parameters.Add("@last_name_en", SqlDbType.VarChar, 100).Value = (object)data.last_name_en ?? DBNull.Value;
+                cmd.Parameters.Add("@email", SqlDbType.VarChar, 100).Value = (object)data.email ?? DBNull.Value;
+                cmd.Parameters.Add("@division_code", SqlDbType.VarChar, 50).Value = (object)data.division_code ?? DBNull.Value;
+                cmd.Parameters.Add("@role_id", SqlDbType.VarChar, 50).Value = (object)data.role_id ?? DBNull.Value;
+                cmd.Parameters.Add("@team_code", SqlDbType.VarChar, 50).Value = (object)data.team_code ?? DBNull.Value;
+                cmd.Parameters.Add("@work_place", SqlDbType.VarChar, 50).Value = (object)data.work_place ?? DBNull.Value;
+                cmd.Parameters.Add("@is_active", SqlDbType.Bit).Value = data.is_active;
+                cmd.Parameters.Add("@username", SqlDbType.VarChar, 50).Value = (object)data.username ?? "System";
+                cmd.Parameters.Add("@mode", SqlDbType.VarChar, 10).Value = data.mode;
+
+                await con.OpenAsync();
+                await cmd.ExecuteNonQueryAsync();
+                con.Close();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // สามารถทำ Log Error ได้ที่นี่
+                throw new Exception("Error at PostUserProfile: " + ex.Message);
+            }
+        }
+        public static async Task<List<Res_Dropdown>> GetDropdownList(Req_Dropdown type)
+        {
+            List<Res_Dropdown> results = new();
+            try
+            {
+                using var con = new SqlConnection(connectionString);
+                using var cmd = new SqlCommand("dbo.getDropDown", con);
+
+                cmd.CommandTimeout = Timeout;
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                // ดึงค่าจาก Property .type ใน Object มาใช้
+                cmd.Parameters.Add("@Type", SqlDbType.NVarChar, 50).Value = (object)type.type ?? DBNull.Value;
+
+                await con.OpenAsync();
+                using var rd = await cmd.ExecuteReaderAsync();
+
+                while (await rd.ReadAsync())
+                {
+                    results.Add(new Res_Dropdown
+                    {
+                        value = rd["value"]?.ToString(),
+                        label = rd["label"]?.ToString()
+                    });
+                }
+                return results;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error in GetDropdownList: {ex.Message}");
+            }
         }
     }
 
 
+
+    
+    }
+    
+    
+        
+ 
+        
+   
 }

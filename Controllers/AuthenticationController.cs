@@ -177,34 +177,59 @@ namespace IATMS.Controllers
 
             string UserName = Payload.username;
             string PassWord = Payload.password;
+            bool isAuthenticated = false;
+            //ldap
+            try
+            {
+                using (var entry = new DirectoryEntry(Path, UserName, PassWord, AuthenticationTypes.Secure))
+                {
+                    var forceBind = entry.NativeObject;
+                    isAuthenticated = true;
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning($"LDAP failed, trying MockData: {ex.Message}");
+            }
+            Res_Role userRole = null;
+            Res_Profile userProfile = null;
 
-            //try
-            //{
-            //    using (var entry = new DirectoryEntry(Path, UserName, PassWord, AuthenticationTypes.Secure))
-            //    {
-            //        var forceBind = entry.NativeObject;
-            //    }
-            //}
-            //catch (Exception ex)
-            //{
-            //    Console.WriteLine("Uncorrect: " + ex.Message);
-            //    return Unauthorized(new
-            //    {
-            //        status = "error",
-            //        message = "uncorrect",
-            //        details = ex.Message
-            //    });
-            //}
+            if (isAuthenticated)
+            {
+                // กรณีผ่าน LDAP: ดึงข้อมูลจาก DB จริง
+                Res_Login dbProfile = ConDB.GetSigninUserProfile(UserName);
+                userRole = dbProfile.role;
+                userProfile = dbProfile.profile;
+            }
+            else
+            {
+                // กรณี LDAP พลาด: ค้นหาใน MockData
+                var dummy = MockData.Users.FirstOrDefault(u =>
+                    u.username.Equals(UserName, StringComparison.OrdinalIgnoreCase) &&
+                    u.password == PassWord);
+
+                if (dummy != null)
+                {
+                    userRole = dummy.role;
+                    userProfile = dummy.result; // ใช้ .result ตามที่แจ้งมา
+                }
+            }
+
+            // ตรวจสอบว่ามี User หรือไม่
+            if (userProfile == null || string.IsNullOrEmpty(userProfile.oa_user))
+            {
+                return Unauthorized(new { status = "error", message = "Invalid username or password." });
+            }
 
             // declare object Res_Login
             Res_Login result = new Res_Login();
             // generate AC Token
             string guid = Guid.NewGuid().ToString();
-            var Lifetem_Access = System.DateTime.Now.AddSeconds(AppSettings.AccessLiftTime);
+            var Lifetem_Access = System.DateTime.Now.AddMinutes(AppSettings.AccessLiftTime);
             result.token = JwtToken.GenerateToken(UserName, AppSettings.AccessSecretKey, guid, Lifetem_Access);
 
             // generate RF Token
-            DateTime refresh_expire = System.DateTime.Now.AddSeconds(AppSettings.RefreshLiftTime);
+            DateTime refresh_expire = System.DateTime.Now.AddMinutes(AppSettings.RefreshLiftTime);
             result.refresh_token = JwtToken.GenerateToken(UserName, AppSettings.RefreshSecretKey, guid, refresh_expire);
 
             Res_Login profileRole = ConDB.GetSigninUserProfile(UserName);
@@ -339,5 +364,5 @@ namespace IATMS.Controllers
 
 
     }
-    
+
 }

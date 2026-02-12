@@ -11,5 +11,9 @@
         public static string LdapServer { get; } = app_setting["Ldap:Server"];
         public static string LdapPort { get; } = app_setting["Ldap:Port"];
         public static string LdapPath => $"LDAP://{LdapServer}:{LdapPort}";
+
+        public static string LdapSearchUser = app_setting["LdapSearchUser"];
+        public static string LdapSearchPassword = app_setting["LdapSearchPassword"];
+        public static string LdapName = app_setting["LdapName"];
     }
 }
