@@ -176,77 +176,77 @@ namespace IATMS.Controllers
 
         }
 
-        [HttpPost("user_profile_dummy")]
+        //[HttpPost("user_profile_dummy")]
 
-        public async Task<IActionResult> dummyUser([FromBody] Pay_dummy Payload)
+        //public async Task<IActionResult> dummyUser([FromBody] Pay_dummy Payload)
 
-        {
+        //{
 
-            if (Payload == null || string.IsNullOrWhiteSpace(Payload.username))
+        //    if (Payload == null || string.IsNullOrWhiteSpace(Payload.username))
 
-                return BadRequest(new { message = "username is required" });
+        //        return BadRequest(new { message = "username is required" });
 
-            var username = Payload.username.Trim();
+        //    var username = Payload.username.Trim();
 
-            var user = _dummyUsers.FirstOrDefault(u =>
+        //    var user = _dummyUsers.FirstOrDefault(u =>
 
-                u.username.Equals(username, StringComparison.OrdinalIgnoreCase));
+        //        u.username.Equals(username, StringComparison.OrdinalIgnoreCase));
 
-            if (user == null)
+        //    if (user == null)
 
-            {
+        //    {
 
-                // จะใช้ ErrorMessage.GetMessage(2002) ก็ได้ ถ้าคุณอยากให้ format เหมือนของเดิม
+        //        // จะใช้ ErrorMessage.GetMessage(2002) ก็ได้ ถ้าคุณอยากให้ format เหมือนของเดิม
 
-                // Message msg = ErrorMessage.GetMessage(2002);
+        //        // Message msg = ErrorMessage.GetMessage(2002);
 
-                // return BadRequest(msg);
+        //        // return BadRequest(msg);
 
-                return NotFound(new { message = "user not found" });
+        //        return NotFound(new { message = "user not found" });
 
-            }
+        //    }
 
-            // สร้าง Res_Login เหมือน SignIn
+        //    // สร้าง Res_Login เหมือน SignIn
 
-            Res_Login result = new Res_Login();
+        //    Res_Login result = new Res_Login();
 
-            string guid = Guid.NewGuid().ToString();
+        //    string guid = Guid.NewGuid().ToString();
 
-            var accessExpire = DateTime.Now.AddHours(AppSettings.AccessLiftTime);
+        //    var accessExpire = DateTime.Now.AddHours(AppSettings.AccessLiftTime);
 
-            result.token = JwtToken.GenerateToken(user.username, AppSettings.AccessSecretKey, guid, accessExpire);
+        //    result.token = JwtToken.GenerateToken(user.username, AppSettings.AccessSecretKey, guid, accessExpire);
 
-            DateTime refresh_expire = DateTime.Now.AddHours(AppSettings.RefreshLiftTime);
+        //    DateTime refresh_expire = DateTime.Now.AddHours(AppSettings.RefreshLiftTime);
 
-            result.refresh_token = JwtToken.GenerateToken(user.username, AppSettings.RefreshSecretKey, guid, refresh_expire);
+        //    result.refresh_token = JwtToken.GenerateToken(user.username, AppSettings.RefreshSecretKey, guid, refresh_expire);
 
-            result.role = user.role;
+        //    result.role = user.role;
 
-            result.profile = user.profile;
+        //    result.profile = user.profile;
 
-            //// (ถ้าคุณอยากเก็บ refresh token ลง DB ให้เหมือน SignIn)
+        //    //// (ถ้าคุณอยากเก็บ refresh token ลง DB ให้เหมือน SignIn)
 
-            //try
+        //    //try
 
-            //{
+        //    //{
 
-            //    await ConDB.tokenRefresh(user.username, result.refresh_token, refresh_expire);
+        //    //    await ConDB.tokenRefresh(user.username, result.refresh_token, refresh_expire);
 
-            //}
+        //    //}
 
-            //catch (Exception ex)
+        //    //catch (Exception ex)
 
-            //{
+        //    //{
 
-            //    _logger.LogError(ex, exception_msg + ex.Message);
+        //    //    _logger.LogError(ex, exception_msg + ex.Message);
 
-            //    return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+        //    //    return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
 
-            //}
+        //    //}
 
-            return Ok(result);
+        //    return Ok(result);
 
-        }
+        //}
 
 
     }
