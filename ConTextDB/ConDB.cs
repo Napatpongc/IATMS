@@ -601,7 +601,7 @@ namespace IATMS.contextDB
             try
             {
                 using var con = new SqlConnection(connectionString);
-                using var cmd = new SqlCommand("dbo.getButtomCICO", con);
+                using var cmd = new SqlCommand("dbo.getButtonCICO", con);
 
                 cmd.CommandTimeout = Timeout;
                 cmd.CommandType = CommandType.StoredProcedure;
