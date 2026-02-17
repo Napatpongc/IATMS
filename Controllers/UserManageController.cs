@@ -18,6 +18,7 @@ using System.DirectoryServices.AccountManagement;
 using System.Security.AccessControl;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
+
 namespace IATMS.Controllers
 {
     [Route("api")]
@@ -87,9 +88,8 @@ namespace IATMS.Controllers
             }
         }
 
-        
 
-        [HttpGet]
+
         [HttpGet("find")]
         public async Task<IActionResult> FindUser(string? oa_user, string? fname, string? lname)
         {

@@ -43,11 +43,11 @@ namespace IATMS.Controllers
             //ldap
             try
             {
-                using (var entry = new DirectoryEntry(Path, UserName, PassWord, AuthenticationTypes.Secure))
-                {
-                    var forceBind = entry.NativeObject;
-                    isAuthenticated = true;
-                }
+                //using (var entry = new DirectoryEntry(Path, UserName, PassWord, AuthenticationTypes.Secure))
+                //{
+                //    var forceBind = entry.NativeObject;
+                //    isAuthenticated = true;
+                //}
             }
             catch (Exception ex)
             {
@@ -160,7 +160,7 @@ namespace IATMS.Controllers
             Res_RefreshToken result = new();
             result.token = JwtToken.GenerateToken(info.username, AppSettings.AccessSecretKey, info.guid, System.DateTime.Now.AddMinutes(AppSettings.AccessLiftTime));
 
-            DateTime refresh_expire = System.DateTime.Now.AddHours(AppSettings.RefreshLiftTime);
+            DateTime refresh_expire = System.DateTime.Now.AddMinutes(AppSettings.RefreshLiftTime);
             result.refresh_token = JwtToken.GenerateToken(info.username, AppSettings.RefreshSecretKey, info.guid, refresh_expire);
 
             try

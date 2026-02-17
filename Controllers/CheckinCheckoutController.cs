@@ -2,31 +2,30 @@
 using IATMS.contextDB;
 using IATMS.Models.Authentications;
 using IATMS.Models.Payloads;
+using IATMS.Models.Payloads.CICO;
+using IATMS.Models.Responses.CheckinCheckout;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.Data.SqlClient;
-
-
+using Microsoft.IdentityModel.Tokens;
 
 namespace IATMS.Controllers
 {
-    [Route("api")]
+    [Route("api/")]
     [ApiController]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 
-
-    public class HolidayController : ControllerBase
+    public class CheckinCheckoutController : ControllerBase
     {
         private readonly TokenValidationParameters _tokenValidationParameters;
-        public HolidayController(TokenValidationParameters tokenValidationParameters)
+        public CheckinCheckoutController(TokenValidationParameters tokenValidationParameters)
         {
             _tokenValidationParameters = tokenValidationParameters;
         }
-        [HttpGet("getHolidays")]
-        public async Task<IActionResult> getHolidays([FromQuery] getHolidays q)
+        [HttpGet("getButton")]
+        public async Task<IActionResult> getButton ()
         {
             AccessTokenProps info;
             try
@@ -37,49 +36,27 @@ namespace IATMS.Controllers
             {
                 return Unauthorized();
             }
-            var result = ConDB.GetHolidays(q.isActive, q.yearSearch);
-            return Ok(result);
-
-        }
-
-        [HttpPost("postHolidays")]
-        public async Task<IActionResult> postHolidays([FromBody] postHolidays Payload)
-        {
-            AccessTokenProps info;
             try
             {
-                info = JwtToken.AccessTokenValidation(Request, _tokenValidationParameters);
-            }
-            catch
-            {
-                return Unauthorized();
-            }
-            try
-            {
-                await ConDB.PostHolidays(Payload.holidayDate,Payload.holidayName,Payload.isActive, info.username);
-                return Ok(new { Success = true });
+                var result = await ConDB.GetButton(info.username);
+                return Ok(result);
 
-            }
-            catch (SqlException ex)
+            }catch (Exception ex)
             {
-                return StatusCode(500, new { res_code = 500, message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                // กรณี Error อื่นๆ
                 return Unauthorized(new
                 {
                     res_code = 401,
                     message = "สิทธิ์การเข้าใช้งานไม่ถูกต้องหรือหมดอายุ"
                 });
-            }
 
+            }
+            
+            
 
         }
 
-
-        [HttpGet("getHolidayYears")]
-        public async Task<IActionResult> getHolidayYears()
+        [HttpGet("getCICO")]
+        public async Task<IActionResult> getCICO([FromQuery] Pay_CICO q)
         {
             AccessTokenProps info;
             try
@@ -90,11 +67,24 @@ namespace IATMS.Controllers
             {
                 return Unauthorized();
             }
-            var result = ConDB.GetHolidayYears();
-            return Ok(result);
+            try
+            {
+                var result = await ConDB.GetCico(info.username,q.mode);
+                return Ok(result);
+
+            }
+            catch (Exception ex)
+            {
+                return Unauthorized(new
+                {
+                    res_code = 401,
+                    message = "สิทธิ์การเข้าใช้งานไม่ถูกต้องหรือหมดอายุ"
+                });
+
+            }
+
+
 
         }
     }
-
-
 }

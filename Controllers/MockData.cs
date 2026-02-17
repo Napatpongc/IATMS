@@ -34,18 +34,18 @@ namespace IATMS.Components
             },
             new DummyUser
             {
-                username = "somchai.sae",
+                username = "napattarapong.c",
                 password = "1234",
                 result = new Res_Profile
                 {
-                    oa_user = "somchai.sae",
-                    Name_en = "Somchai Saelee",
-                    Name_th = "สมชาย แซ่ลี้",
-                    division_code = "Human Resources",
-                    Team = "Recruitment",
+                    oa_user = "napattarapong.c",
+                    Name_en = "Napattarapong",
+                    Name_th = "ณภัทรพงศ์ แช่มช้อย",
+                    division_code = "Enterprise Resource Management",
+                    Team = "IT Development",
                     Work_Place = "Head Office",
-                    email = "somchai.s@company.com",
-                    role_id = "HR"
+                    email = "nattapol.prai@ku.th",
+                    role_id = "ADMIN"
                 }
             },
             new DummyUser

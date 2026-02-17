@@ -4,10 +4,11 @@ using IATMS.Components;
 using IATMS.Configurations;
 using IATMS.Models.Authentications;
 using IATMS.Models.Payloads;
-using IATMS.Models.Responses.Holidays;
 using IATMS.Models.Payloads.UserManage;
 using IATMS.Models.Responses;
+using IATMS.Models.Responses.CheckinCheckout;
 using IATMS.Models.Responses.DropDown;
+using IATMS.Models.Responses.Holidays;
 using IATMS.Models.Responses.Role;
 using IATMS.Models.Responses.User_Manage;
 using Microsoft.AspNetCore.Mvc;
@@ -230,7 +231,7 @@ namespace IATMS.contextDB
                 cmd.Parameters.Add("@menu_attendance", SqlDbType.Bit).Value = data.menu_attendance;
 
                 cmd.Parameters.Add("@menu_report", SqlDbType.Bit).Value = data.menu_report;
-                cmd.Parameters.Add("@menu_admin", SqlDbType.Bit).Value = data.menu_admin; 
+                cmd.Parameters.Add("@menu_admin", SqlDbType.Bit).Value = data.menu_admin;
                 cmd.Parameters.Add("@menu_setup", SqlDbType.Bit).Value = data.menu_setup;
 
                 // --- 3. การจัดการฟังก์ชัน ---
@@ -245,7 +246,7 @@ namespace IATMS.contextDB
                 cmd.Parameters.Add("@func_rp_compensation", SqlDbType.Bit).Value = data.func_rp_compensation;
 
                 // --- 4. สถานะและผู้บันทึก ---
-                cmd.Parameters.Add("@is_active", SqlDbType.Bit).Value = data.is_active; 
+                cmd.Parameters.Add("@is_active", SqlDbType.Bit).Value = data.is_active;
                 cmd.Parameters.Add("@username", SqlDbType.VarChar, 50).Value = data.username;
 
                 // --- 5. ข้อมูลสำรอง (Spare Fields) ---
@@ -254,7 +255,7 @@ namespace IATMS.contextDB
                 cmd.Parameters.Add("@menu_spare2", SqlDbType.Bit).Value = (object)data.menu_spare2 ?? DBNull.Value;
 
                 cmd.Parameters.Add("@menu_spare3", SqlDbType.Bit).Value = (object)data.menu_spare3 ?? DBNull.Value;
-                cmd.Parameters.Add("@menu_spare4", SqlDbType.Bit).Value = (object)data.menu_spare4 ?? DBNull.Value; 
+                cmd.Parameters.Add("@menu_spare4", SqlDbType.Bit).Value = (object)data.menu_spare4 ?? DBNull.Value;
                 cmd.Parameters.Add("@menu_spare5", SqlDbType.Bit).Value = (object)data.menu_spare5 ?? DBNull.Value;
 
                 cmd.Parameters.Add("@func_spare1", SqlDbType.Bit).Value = (object)data.func_spare1 ?? DBNull.Value;
@@ -272,7 +273,7 @@ namespace IATMS.contextDB
                 cmd.Parameters.Add("@func_spare7", SqlDbType.Bit).Value = (object)data.func_spare7 ?? DBNull.Value;
 
                 cmd.Parameters.Add("@func_spare8", SqlDbType.Bit).Value = (object)data.func_spare8 ?? DBNull.Value;
-                cmd.Parameters.Add("@func_spare9", SqlDbType.Bit).Value = (object)data.func_spare9 ?? DBNull.Value; 
+                cmd.Parameters.Add("@func_spare9", SqlDbType.Bit).Value = (object)data.func_spare9 ?? DBNull.Value;
                 cmd.Parameters.Add("@func_spare10", SqlDbType.Bit).Value = (object)data.func_spare10 ?? DBNull.Value;
 
                 await con.OpenAsync();
@@ -393,7 +394,7 @@ namespace IATMS.contextDB
 
                     var dt = rd.GetDateTime(rd.GetOrdinal("holiday_date"));
                     item.holidayDate = DateOnly.FromDateTime(dt);
-                    item.holidayName = rd["holiday_name"]?.ToString(); 
+                    item.holidayName = rd["holiday_name"]?.ToString();
                     item.isActive = Convert.ToInt32(rd["is_active"]) == 1;
 
                     results.Add(item);
@@ -409,7 +410,7 @@ namespace IATMS.contextDB
                 throw;
             }
         }
-    
+
 
         public static async Task PostHolidays(DateOnly holydayDate, string holydayName, bool isActive, string username)
         {
@@ -425,7 +426,7 @@ namespace IATMS.contextDB
                 cmd.Parameters.Add("@holidayName", SqlDbType.VarChar, 100).Value = holydayName;
                 cmd.Parameters.Add("@isActive", SqlDbType.Bit).Value = isActive;
                 cmd.Parameters.Add("@username", SqlDbType.VarChar, 50).Value = username;
-                
+
                 await conn.OpenAsync();
                 await cmd.ExecuteNonQueryAsync();
                 conn.Close();
@@ -438,11 +439,11 @@ namespace IATMS.contextDB
 
         }
 
-       
 
-        public static List <Res_HolidayYears> GetHolidayYears ()
+
+        public static List<Res_HolidayYears> GetHolidayYears()
         {
-            var results = new List<Res_HolidayYears> ();
+            var results = new List<Res_HolidayYears>();
             try
             {
                 using var con = new SqlConnection(connectionString);
@@ -465,9 +466,10 @@ namespace IATMS.contextDB
                 rd.Close();
                 cmd.Dispose();
                 con.Close();
-                
-                
-            }catch (Exception ex)
+
+
+            }
+            catch (Exception ex)
             {
                 throw;
             }
@@ -590,12 +592,91 @@ namespace IATMS.contextDB
                 throw new Exception($"Error in GetDropdownList: {ex.Message}");
             }
         }
+
+        public static async Task <getButton> GetButton (string username)
+        {
+            var results = new getButton();
+            try
+            {
+                using var con = new SqlConnection(connectionString);
+                using var cmd = new SqlCommand("dbo.getButtomCICO", con);
+
+                cmd.CommandTimeout = Timeout;
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = username;
+
+                await con.OpenAsync();
+                using var rd = await cmd.ExecuteReaderAsync();
+
+                while (await rd.ReadAsync())
+                {
+                    results.oaUser = rd["oa_user"]?.ToString();
+                    var dt = rd.GetDateTime(rd.GetOrdinal("at_date"));
+                    results.attDate = DateOnly.FromDateTime(dt);
+                    results.canCi = Convert.ToInt32(rd["can_ci"]) == 1;
+                    results.canCo = Convert.ToInt32(rd["can_co"]) == 1;
+                }
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+            return results;
+        }
+
+        public static async Task<List<getCICO>> GetCico(string username, int mode)
+        {
+            var results = new List<getCICO>();
+
+            using var con = new SqlConnection(connectionString);
+            using var cmd = new SqlCommand("dbo.getCICO", con)
+            {
+                CommandTimeout = Timeout,
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = username;
+
+            // ใส่บรรทัดนี้ต่อเมื่อ SP มี @mode จริงเท่านั้น
+            cmd.Parameters.Add("@mode", SqlDbType.Int).Value = mode;
+
+            await con.OpenAsync();
+            using var rd = await cmd.ExecuteReaderAsync();
+
+            // เปลี่ยน "at_date" ให้ตรงกับชื่อคอลัมน์ที่ SP ส่งออกมาจริง
+            int iDate = rd.GetOrdinal("date");
+
+            while (await rd.ReadAsync())
+            {
+                var dt = rd.GetDateTime(iDate);
+
+                var item = new getCICO
+                {
+                    attDate = DateOnly.FromDateTime(dt),
+                    ciTime = rd["ci_time"]?.ToString(),
+                    ciCorrectTime = rd["ci_correct_time"]?.ToString(),
+                    ciCorrectZone = rd["ci_correct_zone"]?.ToString(),
+                    ciReason = rd["ci_reason"]?.ToString(),
+                    coTime = rd["co_time"]?.ToString(),
+                    coCorrectTime = rd["co_correct_time"]?.ToString(),
+                    coCorrectZone = rd["co_correct_zone"]?.ToString(),
+                    coReason = rd["co_reason"]?.ToString(),
+                    isNomal = Convert.ToInt32(rd["is_normal"]) == 1
+                };
+
+                results.Add(item);
+            }
+
+            return results;
+        }
+
+
     }
-  
+
 }
-    
-    
- 
-        
-   
+
+
+
+
+
 
