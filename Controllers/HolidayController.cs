@@ -13,7 +13,7 @@ using Microsoft.Data.SqlClient;
 
 namespace IATMS.Controllers
 {
-    [Route("api")]
+    [Route("api/")]
     [ApiController]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 
