@@ -4,6 +4,7 @@ using IATMS.Components;
 using IATMS.Configurations;
 using IATMS.Models.Authentications;
 using IATMS.Models.Payloads;
+using IATMS.Models.Payloads.CICO;
 using IATMS.Models.Payloads.UserManage;
 using IATMS.Models.Responses;
 using IATMS.Models.Responses.CheckinCheckout;
@@ -669,7 +670,41 @@ namespace IATMS.contextDB
 
             return results;
         }
+        public static async Task<bool> PostCICO(Pay_CICO data)
+        {
+            try
+            {
+                using var con = new SqlConnection(connectionString);
+                using var cmd = new SqlCommand("dbo.postCICO", con);
 
+                cmd.CommandTimeout = Timeout; // ใช้ค่า Timeout ที่คุณตั้งไว้
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                // Binding Parameters ให้ตรงกับ Stored Procedure [dbo].[postCICO]
+                cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = (object)data.oa_user ?? DBNull.Value;
+
+                // สำหรับ Location และ Address แนะนำใช้ NVarChar เพื่อรองรับภาษาไทย
+                cmd.Parameters.Add("@location", SqlDbType.NVarChar, 100).Value = (object)data.location ?? DBNull.Value;
+                cmd.Parameters.Add("@address", SqlDbType.NVarChar, 255).Value = (object)data.address ?? DBNull.Value;
+
+                cmd.Parameters.Add("@mac_address", SqlDbType.VarChar, 50).Value = (object)data.mac_address ?? DBNull.Value;
+
+                // ถ้า reason เป็นค่าว่าง ให้ส่ง "-" ตาม Logic ของคุณ
+                cmd.Parameters.Add("@reason", SqlDbType.NVarChar, 255).Value =
+                    string.IsNullOrWhiteSpace(data.reason) ? "-" : data.reason;
+
+                await con.OpenAsync();
+                await cmd.ExecuteNonQueryAsync();
+                con.Close();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // แนะนำให้ Log ex.Message ไว้ดูยามจำเป็นครับ
+                throw new Exception("Error at PostCICO: " + ex.Message);
+            }
+        }
 
     }
 

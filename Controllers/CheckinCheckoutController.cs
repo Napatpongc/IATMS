@@ -56,7 +56,7 @@ namespace IATMS.Controllers
         }
 
         [HttpGet("getCICO")]
-        public async Task<IActionResult> getCICO([FromQuery] Pay_CICO q)
+        public async Task<IActionResult> getCICO([FromQuery] Pay_ButtomCICO q)
         {
             AccessTokenProps info;
             try
@@ -82,9 +82,56 @@ namespace IATMS.Controllers
                 });
 
             }
+        }
+        [HttpPost("postCICO")]
+        public async Task<IActionResult> postCICO([FromBody] Pay_CICO data)
+        {
+            AccessTokenProps info;
+            try
+            {
+                info = JwtToken.AccessTokenValidation(Request, _tokenValidationParameters);
+            }
+            catch (Exception)
+            {
+                return Unauthorized();
+            }
 
+            try
+            {
+                if (data == null)
+                {
+                    return BadRequest(new { message = "ข้อมูลไม่ถูกต้อง" });
+                }
 
+                // บังคับใช้ username จาก Token (oa_user) เพื่อความปลอดภัย 
+                // หรือจะใช้ data.oa_user ที่ส่งมาจาก Frontend ก็ได้ถ้า logic ออกแบบไว้แบบนั้น
+                data.oa_user = info.username;
 
+                // เรียกใช้ ConDB 
+                var success = await ConDB.PostCICO(data);   
+
+                if (success)
+                {
+                    return Ok(new
+                    {
+                        res_code = 200,
+                        message = "บันทึกข้อมูลสำเร็จ"
+                    });
+                }
+                else
+                {
+                    return BadRequest(new { message = "ไม่สามารถบันทึกข้อมูลได้" });
+                }
+            }
+            catch (Exception ex)
+            {
+                // กรณีเกิด Error ในระดับ Database หรือ Code
+                return StatusCode(StatusCodes.Status500InternalServerError, new
+                {
+                    res_code = 500,
+                    message = "เกิดข้อผิดพลาดภายในระบบ: " + ex.Message
+                });
+            }
         }
     }
 }
