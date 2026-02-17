@@ -16,20 +16,21 @@ namespace IATMS.Components
 
         public static readonly List<DummyUser> Users = new()
         {
+
             new DummyUser
             {
                 username = "nattapol.prai",
-                password = "1234",
+                password = "@Int1234",
                 result = new Res_Profile
                 {
                     oa_user = "nattapol.prai",
-                    Name_en = "Nattapol Prairuenrom",
-                    Name_th = "ณัฏฐพล ไพรรื่นรมย์",
-                    division_code = "Enterprise Resource Management",
-                    Team = "IT Development",
+                    Name_en = "nattapol",
+                    Name_th = "สมชาย แซ่ลี้",
+                    division_code = "Human Resources",
+                    Team = "Recruitment",
                     Work_Place = "Head Office",
-                    email = "nattapol.prai@ku.th",
-                    role_id = "ADMIN"
+                    email = "somchai.s@company.com",
+                    role_id = "HR"
                 }
             },
             new DummyUser

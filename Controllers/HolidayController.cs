@@ -13,7 +13,7 @@ using Microsoft.Data.SqlClient;
 
 namespace IATMS.Controllers
 {
-    [Route("api")]
+    [Route("api/")]
     [ApiController]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
 
@@ -77,22 +77,6 @@ namespace IATMS.Controllers
 
         }
 
-        [HttpGet("getHolidayYearRange")]
-        public async Task<IActionResult> getHolidayYearRange()
-        {
-            AccessTokenProps info;
-            try
-            {
-                info = JwtToken.AccessTokenValidation(Request, _tokenValidationParameters);
-            }
-            catch (Exception ex)
-            {
-                return Unauthorized();
-            }
-            var result = ConDB.GetHolidayYearRange();
-            return Ok(result);
-
-        }
 
         [HttpGet("getHolidayYears")]
         public async Task<IActionResult> getHolidayYears()
