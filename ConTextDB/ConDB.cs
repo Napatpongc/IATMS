@@ -16,6 +16,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 using System.Data;
 using System.Runtime;
+using static IATMS.Models.Responses.CheckinCheckout.getButton;
 using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 namespace IATMS.contextDB
@@ -615,6 +616,9 @@ namespace IATMS.contextDB
                     results.attDate = DateOnly.FromDateTime(dt);
                     results.canCi = Convert.ToInt32(rd["can_ci"]) == 1;
                     results.canCo = Convert.ToInt32(rd["can_co"]) == 1;
+                    results.ciThreshold = rd["ci_threshold_time"]?.ToString();
+                    results.coThreshold = rd["co_threshold_time"]?.ToString();
+                    results.wpCondition = rd["wp_condition"]?.ToString();
                 }
             }
             catch (Exception ex)

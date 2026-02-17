@@ -6,8 +6,12 @@
         public DateOnly attDate { get; set; }
         public bool canCi { get; set; }
         public bool canCo { get; set; }
-
+        public string ciThreshold { get; set; }
+        public string coThreshold { get; set; }
+        public string wpCondition { get; set; }
     }
+
+   
 
     public class getCICO
     {
