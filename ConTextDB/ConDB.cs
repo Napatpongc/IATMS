@@ -5,11 +5,13 @@ using IATMS.Configurations;
 using IATMS.Models.Authentications;
 using IATMS.Models.Payloads;
 using IATMS.Models.Payloads.CICO;
+using IATMS.Models.Payloads.Leave;
 using IATMS.Models.Payloads.UserManage;
 using IATMS.Models.Responses;
 using IATMS.Models.Responses.CheckinCheckout;
 using IATMS.Models.Responses.DropDown;
 using IATMS.Models.Responses.Holidays;
+using IATMS.Models.Responses.Leave;
 using IATMS.Models.Responses.Role;
 using IATMS.Models.Responses.User_Manage;
 using Microsoft.AspNetCore.Mvc;
@@ -660,10 +662,12 @@ namespace IATMS.contextDB
                     attDate = DateOnly.FromDateTime(dt),
                     ciTime = rd["ci_time"]?.ToString(),
                     ciCorrectTime = rd["ci_correct_time"]?.ToString(),
+                    ciAddress = rd["ci_address"]?.ToString(),
                     ciCorrectZone = rd["ci_correct_zone"]?.ToString(),
                     ciReason = rd["ci_reason"]?.ToString(),
                     coTime = rd["co_time"]?.ToString(),
                     coCorrectTime = rd["co_correct_time"]?.ToString(),
+                    coAddress = rd["co_address"]?.ToString(),
                     coCorrectZone = rd["co_correct_zone"]?.ToString(),
                     coReason = rd["co_reason"]?.ToString(),
                     isNomal = Convert.ToInt32(rd["is_normal"]) == 1
@@ -693,9 +697,8 @@ namespace IATMS.contextDB
 
                 cmd.Parameters.Add("@mac_address", SqlDbType.VarChar, 50).Value = (object)data.mac_address ?? DBNull.Value;
 
-                // ถ้า reason เป็นค่าว่าง ให้ส่ง "-" ตาม Logic ของคุณ
-                cmd.Parameters.Add("@reason", SqlDbType.NVarChar, 255).Value =
-                    string.IsNullOrWhiteSpace(data.reason) ? "-" : data.reason;
+                // ถ้า reason เป็นค่าว่าง ให้ส่ง "" ตาม Logic ของคุณ
+                cmd.Parameters.Add("@reason", SqlDbType.NVarChar, 255).Value = (object)data.reason ?? DBNull.Value;
 
                 await con.OpenAsync();
                 await cmd.ExecuteNonQueryAsync();
@@ -709,7 +712,89 @@ namespace IATMS.contextDB
                 throw new Exception("Error at PostCICO: " + ex.Message);
             }
         }
+        public static async Task<List<Res_Leave>> GetLeaveRequest(string username, DateOnly? startDate = null, DateOnly? endDate = null, string status = null)
+        {
+            var results = new List<Res_Leave>();
+            try
+            {
+                using var con = new SqlConnection(connectionString);
+                using var cmd = new SqlCommand("dbo.getLeaveRequest", con);
 
+                cmd.CommandTimeout = Timeout;
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                // รับค่าทีละตัวและจัดการ DBNull หากไม่ได้ส่งค่ามา
+                cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = (object)username ?? DBNull.Value;
+                cmd.Parameters.Add("@startDate", SqlDbType.Date).Value = (object)startDate ?? DBNull.Value;
+                cmd.Parameters.Add("@endDate", SqlDbType.Date).Value = (object)endDate ?? DBNull.Value;
+                cmd.Parameters.Add("@status", SqlDbType.VarChar, 50).Value = (object)status ?? DBNull.Value;
+
+                await con.OpenAsync();
+                using var rd = await cmd.ExecuteReaderAsync();
+                while (await rd.ReadAsync())
+                {
+                    results.Add(new Res_Leave
+                    {
+                        oa_user = rd["oa_user"]?.ToString(),
+                        // ดึงจากคอลัมน์ภาษาอังกฤษที่แก้ใหม่ใน SQL
+                        type_leave = rd["type_leave_display"]?.ToString(),
+                        start_date = rd["start_date"] != DBNull.Value ? DateOnly.FromDateTime(Convert.ToDateTime(rd["start_date"])) : null,
+                        end_date = rd["end_date"] != DBNull.Value ? DateOnly.FromDateTime(Convert.ToDateTime(rd["end_date"])) : null,
+
+                        // รองรับค่า NULL สำหรับการลาเต็มวัน
+                        start_time = rd["start_time"] != DBNull.Value ? Convert.ToDateTime(rd["start_time"]) : null,
+                        end_time = rd["end_time"] != DBNull.Value ? Convert.ToDateTime(rd["end_time"]) : null,
+
+                        reason = rd["reason"]?.ToString(),
+                        status_request = rd["status_display"]?.ToString(),
+                        total_hours = Convert.ToDecimal(rd["total_hours"]),
+                        approve_by = rd["approve_by"]?.ToString(),
+                        approve_date = rd["approve_date"] != DBNull.Value ? Convert.ToDateTime(rd["approve_date"]) : null,
+                        created_date = Convert.ToDateTime(rd["created_date"])
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error at GetLeaveRequest: " + ex.Message);
+            }
+            return results;
+        }
+
+        public static async Task<bool> PostLeaveRequest(Pay_Leave data)
+        {
+            try
+            {
+                using var con = new SqlConnection(connectionString);
+                using var cmd = new SqlCommand("dbo.postLeaveRequest", con);
+
+                cmd.CommandTimeout = Timeout;
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                // Binding Parameters (ตามลำดับใน Stored Procedure)
+                cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = (object)data.oa_user ?? DBNull.Value;
+                cmd.Parameters.Add("@type_leave", SqlDbType.VarChar, 50).Value = (object)data.type_leave ?? DBNull.Value;
+                cmd.Parameters.Add("@start_date", SqlDbType.Date).Value = data.start_date;
+                cmd.Parameters.Add("@end_date", SqlDbType.Date).Value = data.end_date;
+
+                // เวลาเริ่มต้น/สิ้นสุด (อนุญาตให้เป็น NULL ถ้าลาเต็มวัน)
+                cmd.Parameters.Add("@start_time", SqlDbType.DateTime).Value = (object)data.start_time ?? DBNull.Value;
+                cmd.Parameters.Add("@end_time", SqlDbType.DateTime).Value = (object)data.end_time ?? DBNull.Value;
+
+                // ใช้ NVarChar(-1) สำหรับ varchar(max) รองรับเหตุผลยาวๆ และภาษาไทย
+                cmd.Parameters.Add("@reason", SqlDbType.NVarChar, -1).Value = (object)data.reason ?? DBNull.Value;
+
+                await con.OpenAsync();
+                await cmd.ExecuteNonQueryAsync();
+                con.Close();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error at PostLeaveRequest: " + ex.Message);
+            }
+        }
     }
 
 }

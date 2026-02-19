@@ -87,11 +87,11 @@ namespace IATMS.Controllers
             Res_Login result = new Res_Login();
             // generate AC Token
             string guid = Guid.NewGuid().ToString();
-            var Lifetem_Access = System.DateTime.Now.AddMinutes(AppSettings.AccessLiftTime);
+            var Lifetem_Access = System.DateTime.Now.AddHours(AppSettings.AccessLiftTime);
             result.token = JwtToken.GenerateToken(UserName, AppSettings.AccessSecretKey, guid, Lifetem_Access);
 
             // generate RF Token
-            DateTime refresh_expire = System.DateTime.Now.AddMinutes(AppSettings.RefreshLiftTime);
+            DateTime refresh_expire = System.DateTime.Now.AddHours(AppSettings.RefreshLiftTime);
             result.refresh_token = JwtToken.GenerateToken(UserName, AppSettings.RefreshSecretKey, guid, refresh_expire);
 
             Res_Login profileRole = ConDB.GetSigninUserProfile(UserName);
@@ -160,7 +160,7 @@ namespace IATMS.Controllers
             Res_RefreshToken result = new();
             result.token = JwtToken.GenerateToken(info.username, AppSettings.AccessSecretKey, info.guid, System.DateTime.Now.AddMinutes(AppSettings.AccessLiftTime));
 
-            DateTime refresh_expire = System.DateTime.Now.AddMinutes(AppSettings.RefreshLiftTime);
+            DateTime refresh_expire = System.DateTime.Now.AddHours(AppSettings.RefreshLiftTime);
             result.refresh_token = JwtToken.GenerateToken(info.username, AppSettings.RefreshSecretKey, info.guid, refresh_expire);
 
             try
