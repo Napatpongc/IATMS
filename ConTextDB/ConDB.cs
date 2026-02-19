@@ -7,6 +7,7 @@ using IATMS.Models.Payloads;
 using IATMS.Models.Payloads.CICO;
 using IATMS.Models.Payloads.UserManage;
 using IATMS.Models.Responses;
+using IATMS.Models.Responses.AtendanceChange;
 using IATMS.Models.Responses.CheckinCheckout;
 using IATMS.Models.Responses.DropDown;
 using IATMS.Models.Responses.Holidays;
@@ -601,7 +602,7 @@ namespace IATMS.contextDB
             try
             {
                 using var con = new SqlConnection(connectionString);
-                using var cmd = new SqlCommand("dbo.getButtomCICO", con);
+                using var cmd = new SqlCommand("dbo.getButtonCICO", con);
 
                 cmd.CommandTimeout = Timeout;
                 cmd.CommandType = CommandType.StoredProcedure;
@@ -708,6 +709,74 @@ namespace IATMS.contextDB
                 // แนะนำให้ Log ex.Message ไว้ดูยามจำเป็นครับ
                 throw new Exception("Error at PostCICO: " + ex.Message);
             }
+        }
+        public static async Task<List<Res_AttChange>> getAttChange(string username ,DateOnly? startDate, DateOnly? endDate, string? dropdown)
+        {
+            var results = new List<Res_AttChange>();
+
+            using var con = new SqlConnection(connectionString);
+            using var cmd = new SqlCommand("dbo.getAttChange", con)
+
+            
+            {
+                CommandTimeout = Timeout,
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = username;
+
+            cmd.Parameters.Add("@startDate", SqlDbType.Date).Value = (object?)startDate ?? DBNull.Value;
+
+            cmd.Parameters.Add("@endDate", SqlDbType.Date).Value = (object?)endDate ?? DBNull.Value;
+
+            cmd.Parameters.Add("@dropdown", SqlDbType.VarChar, 50).Value = (object?)dropdown ?? DBNull.Value;
+
+
+
+            await con.OpenAsync();
+            using var rd = await cmd.ExecuteReaderAsync();
+
+            int iDate = rd.GetOrdinal("date");
+
+            while (await rd.ReadAsync())
+            {
+                var dt = rd.GetDateTime(iDate);
+
+                var item = new Res_AttChange
+                {
+                    // date
+                    attDate = DateOnly.FromDateTime(dt),
+
+                    // action / status / request reason
+                    action = rd["action"] == DBNull.Value ? null : rd["action"].ToString(),
+                    changeStatus = rd["change_status"] == DBNull.Value ? null : rd["change_status"].ToString(),
+                    requestReason = rd["request_reason"] == DBNull.Value ? null : rd["request_reason"].ToString(),
+
+                    // CI (old)
+                    ciTime = rd["ci_time"] == DBNull.Value ? null : rd["ci_time"].ToString(),
+                    ciLocation = rd["ci_location"] == DBNull.Value ? null : rd["ci_location"].ToString(),
+                    ciLatlong = rd["ci_latlong"] == DBNull.Value ? null : rd["ci_latlong"].ToString(),
+                    ciReason = rd["ci_reason"] == DBNull.Value ? null : rd["ci_reason"].ToString(),
+
+                    // CI (new)
+                    ciTimeNew = rd["ci_time_new"] == DBNull.Value ? null : rd["ci_time_new"].ToString(),
+                    ciLocationNew = rd["ci_location_new"] == DBNull.Value ? null : rd["ci_location_new"].ToString(),
+
+                    // CO (old)
+                    coTime = rd["co_time"] == DBNull.Value ? null : rd["co_time"].ToString(),
+                    coLocation = rd["co_location"] == DBNull.Value ? null : rd["co_location"].ToString(),
+                    coLatlong = rd["co_latlong"] == DBNull.Value ? null : rd["co_latlong"].ToString(),
+                    coReason = rd["co_reason"] == DBNull.Value ? null : rd["co_reason"].ToString(),
+
+                    // CO (new)
+                    coTimeNew = rd["co_time_new"] == DBNull.Value ? null : rd["co_time_new"].ToString(),
+                    coLocationNew = rd["co_location_new"] == DBNull.Value ? null : rd["co_location_new"].ToString(),
+                };
+
+                results.Add(item);
+            }
+
+            return results;
         }
 
     }

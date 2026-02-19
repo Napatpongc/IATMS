@@ -94,6 +94,7 @@ namespace IATMS.Controllers
             DateTime refresh_expire = System.DateTime.Now.AddMinutes(AppSettings.RefreshLiftTime);
             result.refresh_token = JwtToken.GenerateToken(UserName, AppSettings.RefreshSecretKey, guid, refresh_expire);
 
+
             Res_Login profileRole = ConDB.GetSigninUserProfile(UserName);
             if (string.IsNullOrEmpty(profileRole.profile.oa_user))
             {

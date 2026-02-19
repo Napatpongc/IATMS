@@ -1,6 +1,6 @@
 ﻿namespace IATMS.Models.Payloads.CICO
 {
-    public class Pay_ButtomCICO
+    public class Pay_ButtonCICO
     {
         public int mode { get; set; }
 

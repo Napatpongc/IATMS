@@ -56,7 +56,7 @@ namespace IATMS.Controllers
         }
 
         [HttpGet("getCICO")]
-        public async Task<IActionResult> getCICO([FromQuery] Pay_ButtomCICO q)
+        public async Task<IActionResult> getCICO([FromQuery] Pay_ButtonCICO q)
         {
             AccessTokenProps info;
             try
