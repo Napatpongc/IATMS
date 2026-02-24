@@ -4,6 +4,7 @@ using IATMS.Components;
 using IATMS.Configurations;
 using IATMS.Models.Authentications;
 using IATMS.Models.Payloads;
+using IATMS.Models.Payloads.AttendanceChange;
 using IATMS.Models.Payloads.CICO;
 using IATMS.Models.Payloads.Leave;
 using IATMS.Models.Payloads.UserManage;
@@ -754,6 +755,8 @@ namespace IATMS.contextDB
                     action = rd["action"] == DBNull.Value ? null : rd["action"].ToString(),
                     changeStatus = rd["change_status"] == DBNull.Value ? null : rd["change_status"].ToString(),
                     requestReason = rd["request_reason"] == DBNull.Value ? null : rd["request_reason"].ToString(),
+                    rejectReason = rd["reject_reason"] == DBNull.Value ? null : rd["reject_reason"].ToString(),
+
 
                     // CI (old)
                     ciTime = rd["ci_time"] == DBNull.Value ? null : rd["ci_time"].ToString(),
@@ -779,52 +782,6 @@ namespace IATMS.contextDB
                 results.Add(item);
             }
 
-            return results;
-        }
-        public static async Task<List<Res_Leave>> GetLeaveRequest(string username, DateOnly? startDate = null, DateOnly? endDate = null, string status = null)
-        {
-            var results = new List<Res_Leave>();
-            try
-            {
-                using var con = new SqlConnection(connectionString);
-                using var cmd = new SqlCommand("dbo.getLeaveRequest", con);
-
-                cmd.CommandTimeout = Timeout;
-                cmd.CommandType = CommandType.StoredProcedure;
-
-                // รับค่าทีละตัวและจัดการ DBNull หากไม่ได้ส่งค่ามา
-                cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = (object)username ?? DBNull.Value;
-                cmd.Parameters.Add("@startDate", SqlDbType.Date).Value = (object)startDate ?? DBNull.Value;
-                cmd.Parameters.Add("@endDate", SqlDbType.Date).Value = (object)endDate ?? DBNull.Value;
-                cmd.Parameters.Add("@status", SqlDbType.VarChar, 50).Value = (object)status ?? DBNull.Value;
-
-                await con.OpenAsync();
-                using var rd = await cmd.ExecuteReaderAsync();
-                while (await rd.ReadAsync())
-                {
-                    results.Add(new Res_Leave
-                    {
-                        oa_user = rd["oa_user"]?.ToString(),
-                        // ดึงจากคอลัมน์ภาษาอังกฤษที่แก้ใหม่ใน SQL
-                        type_leave = rd["type_leave_display"]?.ToString(),
-                        start_date = rd["start_date"] != DBNull.Value ? DateOnly.FromDateTime(Convert.ToDateTime(rd["start_date"])) : null,
-                        end_date = rd["end_date"] != DBNull.Value ? DateOnly.FromDateTime(Convert.ToDateTime(rd["end_date"])) : null,
-
-                        // รองรับค่า NULL สำหรับการลาเต็มวัน
-                        start_time = rd["start_time"] != DBNull.Value ? Convert.ToDateTime(rd["start_time"]) : null,
-                        end_time = rd["end_time"] != DBNull.Value ? Convert.ToDateTime(rd["end_time"]) : null,
-
-                        reason = rd["reason"]?.ToString(),
-                        reject_reason = rd["reject_reason"]?.ToString(),
-                        status_request = rd["status_display"]?.ToString(),
-                        total_minute = Convert.ToDecimal(rd["total_minute"])
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error at GetLeaveRequest: " + ex.Message);
-            }
             return results;
         }
 
@@ -860,24 +817,181 @@ namespace IATMS.contextDB
                 throw new Exception("Error at PostLeaveRequest: " + ex.Message);
             }
         }
-        public static async Task<bool> DeleteLeaveRequest(string username , Pay_Delete_Leave data)
+        public static async Task<List<Res_ModalAttChange>> getModalAttChange(string username, DateOnly date)
+        {
+            var results = new List<Res_ModalAttChange>();
+
+            await using var con = new SqlConnection(connectionString);
+            await using var cmd = new SqlCommand("dbo.getModalAttchange", con)
+            {
+                CommandTimeout = Timeout,
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = username;
+            cmd.Parameters.Add("@at_date", SqlDbType.Date).Value = date;
+
+            await con.OpenAsync();
+            await using var rd = await cmd.ExecuteReaderAsync();
+
+            int iDate = rd.GetOrdinal("date"); // ต้องตรงกับคอลัมน์ที่ SP ส่งออกจริง
+
+            while (await rd.ReadAsync()) // ✅ ต้อง Read ก่อน
+            {
+                var dt = rd.GetDateTime(iDate);
+
+                results.Add(new Res_ModalAttChange
+                {
+                    attDate = DateOnly.FromDateTime(dt),
+                    ciTime = rd["ci_time"]?.ToString(),
+                    ciCorrectTime = rd["ci_correct_time"]?.ToString(),
+                    ciAddress = rd["ci_address"]?.ToString(),
+                    ciLatlong = rd["ci_latlong"]?.ToString(),
+                    ciCorrectZone = rd["ci_correct_zone"]?.ToString(),
+                    ciReason = rd["ci_reason"]?.ToString(),
+                    coTime = rd["co_time"]?.ToString(),
+                    coCorrectTime = rd["co_correct_time"]?.ToString(),
+                    coAddress = rd["co_address"]?.ToString(),
+                    coLatlong = rd["co_latlong"]?.ToString(),
+                    coCorrectZone = rd["co_correct_zone"]?.ToString(),
+                    coReason = rd["co_reason"]?.ToString(),
+                });
+            }
+
+            return results; 
+        }
+
+        public static async Task postAttChange(string username, Pay_AttendanceChange_post payload)
         {
             try
             {
-                using var con = new SqlConnection(connectionString);
-                using var cmd = new SqlCommand("dbo.deleteLeaveRequest", con);
+                using var conn = new SqlConnection(connectionString);
+                using var cmd = new SqlCommand("dbo.postAttendanceChange", conn);
 
                 cmd.CommandTimeout = Timeout;
                 cmd.CommandType = CommandType.StoredProcedure;
 
+                // parameters
                 cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = username;
+                cmd.Parameters.Add("@at_date", SqlDbType.Date).Value = payload.at_date;
+
+                cmd.Parameters.Add("@ci_time_old", SqlDbType.DateTime).Value = (object?)payload.ci_time_old ?? DBNull.Value;
+                cmd.Parameters.Add("@ci_time_new", SqlDbType.DateTime).Value = (object?)payload.ci_time_new ?? DBNull.Value;
+                cmd.Parameters.Add("@ci_location_old", SqlDbType.VarChar, -1).Value = (object?)payload.ci_location_old ?? DBNull.Value; // varchar(max)
+                cmd.Parameters.Add("@ci_location_new", SqlDbType.VarChar, -1).Value = (object?)payload.ci_location_new ?? DBNull.Value;
+                cmd.Parameters.Add("@ci_address_old", SqlDbType.VarChar, -1).Value = (object?)payload.ci_address_old ?? DBNull.Value;
+                cmd.Parameters.Add("@ci_address_new", SqlDbType.VarChar, -1).Value = (object?)payload.ci_address_new ?? DBNull.Value;
+                cmd.Parameters.Add("@ci_request_reason", SqlDbType.VarChar, 100).Value = (object?)payload.ci_request_reason ?? DBNull.Value;
+
+                cmd.Parameters.Add("@co_time_old", SqlDbType.DateTime).Value = (object?)payload.co_time_old ?? DBNull.Value;
+                cmd.Parameters.Add("@co_time_new", SqlDbType.DateTime).Value = (object?)payload.co_time_new ?? DBNull.Value;
+                cmd.Parameters.Add("@co_location_old", SqlDbType.VarChar, -1).Value = (object?)payload.co_location_old ?? DBNull.Value;
+                cmd.Parameters.Add("@co_location_new", SqlDbType.VarChar, -1).Value = (object?)payload.co_location_new ?? DBNull.Value;
+                cmd.Parameters.Add("@co_address_old", SqlDbType.VarChar, -1).Value = (object?)payload.co_address_old ?? DBNull.Value;
+                cmd.Parameters.Add("@co_address_new", SqlDbType.VarChar, -1).Value = (object?)payload.co_address_new ?? DBNull.Value;
+                cmd.Parameters.Add("@co_request_reason", SqlDbType.VarChar, 100).Value = (object?)payload.co_request_reason ?? DBNull.Value;
+
+                cmd.Parameters.Add("@request_reason", SqlDbType.VarChar, 100).Value = (object?)payload.request_reason ?? DBNull.Value;
+
+                await conn.OpenAsync();
+                await cmd.ExecuteNonQueryAsync();
+                conn.Close();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public static async Task DeleteAttChange(string username, DateOnly date)
+        {
+            await using var con = new SqlConnection(connectionString);
+            await using var cmd = new SqlCommand("dbo.deleteAttendanceChange", con)
+            {
+                CommandTimeout = Timeout,
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = username;
+
+            // แนะนำแปลงเป็น DateTime เพื่อความชัวร์กับ SqlParameter
+            cmd.Parameters.Add("@at_date", SqlDbType.Date).Value = date.ToDateTime(TimeOnly.MinValue);
+
+            await con.OpenAsync();
+            await cmd.ExecuteNonQueryAsync();
+        }
+        public static async Task<List<Res_Leave>> GetLeaveRequest(string username, DateOnly? startDate = null, DateOnly? endDate = null, string status = null)
+        {
+            var results = new List<Res_Leave>();
+            try
+            {
+                using var con = new SqlConnection(connectionString);
+                using var cmd = new SqlCommand("dbo.getLeaveRequest", con);
+ 
+                cmd.CommandTimeout = Timeout;
+                cmd.CommandType = CommandType.StoredProcedure;
+ 
+                // รับค่าทีละตัวและจัดการ DBNull หากไม่ได้ส่งค่ามา
+                cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = (object)username ?? DBNull.Value;
+                cmd.Parameters.Add("@startDate", SqlDbType.Date).Value = (object)startDate ?? DBNull.Value;
+                cmd.Parameters.Add("@endDate", SqlDbType.Date).Value = (object)endDate ?? DBNull.Value;
+                cmd.Parameters.Add("@status", SqlDbType.VarChar, 50).Value = (object)status ?? DBNull.Value;
+ 
+                await con.OpenAsync();
+                using var rd = await cmd.ExecuteReaderAsync();
+                while (await rd.ReadAsync())
+                {
+                    results.Add(new Res_Leave
+                    {
+                        oa_user = rd["oa_user"]?.ToString(),
+                        // ดึงจากคอลัมน์ภาษาอังกฤษที่แก้ใหม่ใน SQL
+                        type_leave = rd["type_leave_display"]?.ToString(),
+                        start_date = rd["start_date"] != DBNull.Value ? DateOnly.FromDateTime(Convert.ToDateTime(rd["start_date"])) : null,
+                        end_date = rd["end_date"] != DBNull.Value ? DateOnly.FromDateTime(Convert.ToDateTime(rd["end_date"])) : null,
+ 
+                        // รองรับค่า NULL สำหรับการลาเต็มวัน
+                        start_time = rd["start_time"] != DBNull.Value ? Convert.ToDateTime(rd["start_time"]) : null,
+                        end_time = rd["end_time"] != DBNull.Value ? Convert.ToDateTime(rd["end_time"]) : null,
+ 
+                        reason = rd["reason"]?.ToString(),
+                        reject_reason = rd["reject_reason"]?.ToString(),
+                        status_request = rd["status_display"]?.ToString(),
+                        total_minute = Convert.ToDecimal(rd["total_minute"])
+                    });
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error at GetLeaveRequest: " + ex.Message);
+            }
+            return results;
+        }
+ 
+        public static async Task<bool> PostLeaveRequest(Pay_Leave data)
+        {
+            try
+            {
+                using var con = new SqlConnection(connectionString);
+                using var cmd = new SqlCommand("dbo.postLeaveRequest", con);
+ 
+                cmd.CommandTimeout = Timeout;
+                cmd.CommandType = CommandType.StoredProcedure;
+ 
+                cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = (object)data.oa_user ?? DBNull.Value;
+                cmd.Parameters.Add("@type_leave", SqlDbType.VarChar, 50).Value = (object)data.type_leave ?? DBNull.Value;
+ 
+                // ใช้ DateOnly จาก Model โดยตรง (ถ้า Library รองรับ) หรือแปลงเป็น DateTime
                 cmd.Parameters.Add("@start_date", SqlDbType.Date).Value = data.start_date.ToDateTime(TimeOnly.MinValue);
                 cmd.Parameters.Add("@end_date", SqlDbType.Date).Value = data.end_date.ToDateTime(TimeOnly.MinValue);
-
+ 
+                cmd.Parameters.Add("@start_time", SqlDbType.DateTime).Value = (object)data.start_time ?? DBNull.Value;
+                cmd.Parameters.Add("@end_time", SqlDbType.DateTime).Value = (object)data.end_time ?? DBNull.Value;
+                cmd.Parameters.Add("@reason", SqlDbType.NVarChar, -1).Value = (object)data.reason ?? DBNull.Value;
+ 
                 await con.OpenAsync();
                 await cmd.ExecuteNonQueryAsync();
                 con.Close();
-
+ 
                 return true;
             }
             catch (Exception ex)
@@ -885,6 +999,34 @@ namespace IATMS.contextDB
                 throw new Exception("Error at PostLeaveRequest: " + ex.Message);
             }
         }
+        public static async Task<bool> DeleteLeaveRequest(string username , Pay_Delete_Leave data)
+        {
+            try
+            {
+                using var con = new SqlConnection(connectionString);
+                using var cmd = new SqlCommand("dbo.deleteLeaveRequest", con);
+ 
+                cmd.CommandTimeout = Timeout;
+                cmd.CommandType = CommandType.StoredProcedure;
+ 
+                cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = username;
+                cmd.Parameters.Add("@start_date", SqlDbType.Date).Value = data.start_date.ToDateTime(TimeOnly.MinValue);
+                cmd.Parameters.Add("@end_date", SqlDbType.Date).Value = data.end_date.ToDateTime(TimeOnly.MinValue);
+ 
+                await con.OpenAsync();
+                await cmd.ExecuteNonQueryAsync();
+                con.Close();
+ 
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error at PostLeaveRequest: " + ex.Message);
+            }
+        }
+
+
+
     }
 
 }
