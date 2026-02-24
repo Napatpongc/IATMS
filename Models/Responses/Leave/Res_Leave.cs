@@ -9,10 +9,8 @@
         public DateTime? start_time { get; set; }
         public DateTime? end_time { get; set; }
         public string reason { get; set; }
+        public string reject_reason { get; set; }
         public string status_request { get; set; }
-        public decimal total_hours { get; set; }
-        public string approve_by { get; set; }
-        public DateTime? approve_date { get; set; }
-        public DateTime created_date { get; set; }
+        public decimal total_minute { get; set; }
     }
 }

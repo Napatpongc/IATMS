@@ -35,7 +35,7 @@ namespace IATMS.Controllers
 
             try
             {
-                var result = await ConDB.GetLeaveRequest(q.username, q.startDate, q.endDate, q.status);
+                var result = await ConDB.GetLeaveRequest(info?.username, q.startDate, q.endDate, q.status);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -56,8 +56,27 @@ namespace IATMS.Controllers
 
             try
             {
-                payload.oa_user = info.username; // Force ให้เป็น user ที่ login
                 var success = await ConDB.PostLeaveRequest(payload);
+                return success ? Ok(new { message = "Success" }) : BadRequest();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
+        }
+        [HttpDelete("deleteLeave")]
+        public async Task<IActionResult> DeleteLeaveRequest([FromQuery] Pay_Delete_Leave payload)
+        {
+            AccessTokenProps info;
+            try
+            {
+                info = JwtToken.AccessTokenValidation(Request, _tokenValidationParameters);
+            }
+            catch (Exception) { return Unauthorized(); }
+
+            try
+            {
+                var success = await ConDB.DeleteLeaveRequest(info?.username , payload);
                 return success ? Ok(new { message = "Success" }) : BadRequest();
             }
             catch (Exception ex)

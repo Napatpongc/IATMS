@@ -58,7 +58,7 @@ namespace IATMS.contextDB
                     result.profile.Work_Place = rd["Work_Place"]?.ToString();
                     result.profile.email = rd["email"]?.ToString();
                     result.profile.role_id = rd["role_id"]?.ToString();
-
+                    result.profile.role_level = Convert.ToInt32(rd["role_level"]);
 
                     // --- 2. Mapping Role & Menus (ตาม Res_Role) ---
                     result.role.menu_attendance = rd["menu_attendance"] != DBNull.Value && Convert.ToBoolean(rd["menu_attendance"]);
@@ -815,11 +815,9 @@ namespace IATMS.contextDB
                         end_time = rd["end_time"] != DBNull.Value ? Convert.ToDateTime(rd["end_time"]) : null,
 
                         reason = rd["reason"]?.ToString(),
+                        reject_reason = rd["reject_reason"]?.ToString(),
                         status_request = rd["status_display"]?.ToString(),
-                        total_hours = Convert.ToDecimal(rd["total_hours"]),
-                        approve_by = rd["approve_by"]?.ToString(),
-                        approve_date = rd["approve_date"] != DBNull.Value ? Convert.ToDateTime(rd["approve_date"]) : null,
-                        created_date = Convert.ToDateTime(rd["created_date"])
+                        total_minute = Convert.ToDecimal(rd["total_minute"])
                     });
                 }
             }
@@ -840,18 +838,41 @@ namespace IATMS.contextDB
                 cmd.CommandTimeout = Timeout;
                 cmd.CommandType = CommandType.StoredProcedure;
 
-                // Binding Parameters (ตามลำดับใน Stored Procedure)
                 cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = (object)data.oa_user ?? DBNull.Value;
                 cmd.Parameters.Add("@type_leave", SqlDbType.VarChar, 50).Value = (object)data.type_leave ?? DBNull.Value;
-                cmd.Parameters.Add("@start_date", SqlDbType.Date).Value = data.start_date;
-                cmd.Parameters.Add("@end_date", SqlDbType.Date).Value = data.end_date;
 
-                // เวลาเริ่มต้น/สิ้นสุด (อนุญาตให้เป็น NULL ถ้าลาเต็มวัน)
+                // ใช้ DateOnly จาก Model โดยตรง (ถ้า Library รองรับ) หรือแปลงเป็น DateTime
+                cmd.Parameters.Add("@start_date", SqlDbType.Date).Value = data.start_date.ToDateTime(TimeOnly.MinValue);
+                cmd.Parameters.Add("@end_date", SqlDbType.Date).Value = data.end_date.ToDateTime(TimeOnly.MinValue);
+
                 cmd.Parameters.Add("@start_time", SqlDbType.DateTime).Value = (object)data.start_time ?? DBNull.Value;
                 cmd.Parameters.Add("@end_time", SqlDbType.DateTime).Value = (object)data.end_time ?? DBNull.Value;
-
-                // ใช้ NVarChar(-1) สำหรับ varchar(max) รองรับเหตุผลยาวๆ และภาษาไทย
                 cmd.Parameters.Add("@reason", SqlDbType.NVarChar, -1).Value = (object)data.reason ?? DBNull.Value;
+
+                await con.OpenAsync();
+                await cmd.ExecuteNonQueryAsync();
+                con.Close();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error at PostLeaveRequest: " + ex.Message);
+            }
+        }
+        public static async Task<bool> DeleteLeaveRequest(string username , Pay_Delete_Leave data)
+        {
+            try
+            {
+                using var con = new SqlConnection(connectionString);
+                using var cmd = new SqlCommand("dbo.deleteLeaveRequest", con);
+
+                cmd.CommandTimeout = Timeout;
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = username;
+                cmd.Parameters.Add("@start_date", SqlDbType.Date).Value = data.start_date.ToDateTime(TimeOnly.MinValue);
+                cmd.Parameters.Add("@end_date", SqlDbType.Date).Value = data.end_date.ToDateTime(TimeOnly.MinValue);
 
                 await con.OpenAsync();
                 await cmd.ExecuteNonQueryAsync();
