@@ -785,7 +785,10 @@ namespace IATMS.contextDB
             return results;
         }
 
+<<<<<<< Updated upstream
         
+=======
+>>>>>>> Stashed changes
         public static async Task<List<Res_ModalAttChange>> getModalAttChange(string username, DateOnly date)
         {
             var results = new List<Res_ModalAttChange>();
