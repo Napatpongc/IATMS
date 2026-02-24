@@ -785,38 +785,7 @@ namespace IATMS.contextDB
             return results;
         }
 
-        public static async Task<bool> PostLeaveRequest(Pay_Leave data)
-        {
-            try
-            {
-                using var con = new SqlConnection(connectionString);
-                using var cmd = new SqlCommand("dbo.postLeaveRequest", con);
-
-                cmd.CommandTimeout = Timeout;
-                cmd.CommandType = CommandType.StoredProcedure;
-
-                cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = (object)data.oa_user ?? DBNull.Value;
-                cmd.Parameters.Add("@type_leave", SqlDbType.VarChar, 50).Value = (object)data.type_leave ?? DBNull.Value;
-
-                // ใช้ DateOnly จาก Model โดยตรง (ถ้า Library รองรับ) หรือแปลงเป็น DateTime
-                cmd.Parameters.Add("@start_date", SqlDbType.Date).Value = data.start_date.ToDateTime(TimeOnly.MinValue);
-                cmd.Parameters.Add("@end_date", SqlDbType.Date).Value = data.end_date.ToDateTime(TimeOnly.MinValue);
-
-                cmd.Parameters.Add("@start_time", SqlDbType.DateTime).Value = (object)data.start_time ?? DBNull.Value;
-                cmd.Parameters.Add("@end_time", SqlDbType.DateTime).Value = (object)data.end_time ?? DBNull.Value;
-                cmd.Parameters.Add("@reason", SqlDbType.NVarChar, -1).Value = (object)data.reason ?? DBNull.Value;
-
-                await con.OpenAsync();
-                await cmd.ExecuteNonQueryAsync();
-                con.Close();
-
-                return true;
-            }
-            catch (Exception ex)
-            {
-                throw new Exception("Error at PostLeaveRequest: " + ex.Message);
-            }
-        }
+        
         public static async Task<List<Res_ModalAttChange>> getModalAttChange(string username, DateOnly date)
         {
             var results = new List<Res_ModalAttChange>();
