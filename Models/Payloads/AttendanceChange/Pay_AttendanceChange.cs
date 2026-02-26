@@ -8,6 +8,8 @@
     }
     public class Pay_ModalAttendanceChange
     {
+       public string? username { get; set; }
+
         public DateOnly Date { get; set; }  
     }
 
