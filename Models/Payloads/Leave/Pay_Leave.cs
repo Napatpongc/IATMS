@@ -8,7 +8,6 @@
     }
     public class Pay_Leave
     {
-        public string oa_user { get; set; }
         public string type_leave { get; set; }
         public DateOnly start_date { get; set; }
         public DateOnly end_date { get; set; }

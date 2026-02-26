@@ -1,9 +1,8 @@
 ﻿using IATMS.Components;
 using IATMS.contextDB;
 using IATMS.Models.Authentications;
-using IATMS.Models.Payloads;
 using IATMS.Models.Payloads.Leave;
-using IATMS.Models.Responses.Leave;
+using IATMS.Models.Payloads.LeaveApproval;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -14,17 +13,16 @@ namespace IATMS.Controllers
     [Route("api")]
     [ApiController]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    public class LeaveController : ControllerBase
+    public class LeaveApprovalController : Controller
     {
         private readonly TokenValidationParameters _tokenValidationParameters;
 
-        public LeaveController(TokenValidationParameters tokenValidationParameters)
+        public LeaveApprovalController(TokenValidationParameters tokenValidationParameters)
         {
             _tokenValidationParameters = tokenValidationParameters;
         }
-
-        [HttpGet("getLeave")]
-        public async Task<IActionResult> getLeave([FromQuery] searchLeave q)
+        [HttpGet("getLeaveApproval")]
+        public async Task<IActionResult> getLeave([FromQuery] Search_Leave_Approval payload)
         {
             AccessTokenProps info;
             try
@@ -35,7 +33,7 @@ namespace IATMS.Controllers
 
             try
             {
-                var result = await ConDB.GetLeaveRequest(info?.username, q.startDate, q.endDate, q.status);
+                var result = await ConDB.GetLeaveApproval(info?.username, payload.Search, payload.Team);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -43,29 +41,8 @@ namespace IATMS.Controllers
                 return StatusCode(500, ex.Message);
             }
         }
-
-        [HttpPost("postLeave")]
-        public async Task<IActionResult> postLeave([FromBody] Pay_Leave payload)
-        {
-            AccessTokenProps info;
-            try
-            {
-                info = JwtToken.AccessTokenValidation(Request, _tokenValidationParameters);
-            }
-            catch (Exception) { return Unauthorized(); }
-            
-            try
-            {
-                var success = await ConDB.PostLeaveRequest(info.username , payload);
-                return success ? Ok(new { message = "Success" }) : BadRequest();
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, ex.Message);
-            }
-        }
-        [HttpDelete("deleteLeave")]
-        public async Task<IActionResult> DeleteLeaveRequest([FromQuery] Pay_Delete_Leave payload)
+        [HttpPost("postLeaveApproval")]
+        public async Task<IActionResult> postLeave([FromBody] Pay_LeaveApproval payload)
         {
             AccessTokenProps info;
             try
@@ -76,7 +53,8 @@ namespace IATMS.Controllers
 
             try
             {
-                var success = await ConDB.DeleteLeaveRequest(info?.username , payload);
+                // ส่ง username ของ Admin และ Payload ไปที่ ConDB
+                var success = await ConDB.PostLeaveApproval(info.username, payload);
                 return success ? Ok(new { message = "Success" }) : BadRequest();
             }
             catch (Exception ex)

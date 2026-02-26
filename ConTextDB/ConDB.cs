@@ -7,6 +7,7 @@ using IATMS.Models.Payloads;
 using IATMS.Models.Payloads.AttendanceChange;
 using IATMS.Models.Payloads.CICO;
 using IATMS.Models.Payloads.Leave;
+using IATMS.Models.Payloads.LeaveApproval;
 using IATMS.Models.Payloads.UserManage;
 using IATMS.Models.Responses;
 using IATMS.Models.Responses.AtendanceChange;
@@ -14,6 +15,7 @@ using IATMS.Models.Responses.CheckinCheckout;
 using IATMS.Models.Responses.DropDown;
 using IATMS.Models.Responses.Holidays;
 using IATMS.Models.Responses.Leave;
+using IATMS.Models.Responses.LeaveApproval;
 using IATMS.Models.Responses.Role;
 using IATMS.Models.Responses.User_Manage;
 using Microsoft.AspNetCore.Mvc;
@@ -599,7 +601,7 @@ namespace IATMS.contextDB
             }
         }
 
-        public static async Task <getButton> GetButton (string username)
+        public static async Task<getButton> GetButton(string username)
         {
             var results = new getButton();
             try
@@ -714,14 +716,14 @@ namespace IATMS.contextDB
                 throw new Exception("Error at PostCICO: " + ex.Message);
             }
         }
-        public static async Task<List<Res_AttChange>> getAttChange(string username ,DateOnly? startDate, DateOnly? endDate, string? dropdown)
+        public static async Task<List<Res_AttChange>> getAttChange(string username, DateOnly? startDate, DateOnly? endDate, string? dropdown)
         {
             var results = new List<Res_AttChange>();
 
             using var con = new SqlConnection(connectionString);
             using var cmd = new SqlCommand("dbo.getAttChange", con)
 
-            
+
             {
                 CommandTimeout = Timeout,
                 CommandType = CommandType.StoredProcedure
@@ -785,10 +787,7 @@ namespace IATMS.contextDB
             return results;
         }
 
-<<<<<<< Updated upstream
-        
-=======
->>>>>>> Stashed changes
+
         public static async Task<List<Res_ModalAttChange>> getModalAttChange(string username, DateOnly date)
         {
             var results = new List<Res_ModalAttChange>();
@@ -830,7 +829,7 @@ namespace IATMS.contextDB
                 });
             }
 
-            return results; 
+            return results;
         }
 
         public static async Task postAttChange(string username, Pay_AttendanceChange_post payload)
@@ -899,16 +898,16 @@ namespace IATMS.contextDB
             {
                 using var con = new SqlConnection(connectionString);
                 using var cmd = new SqlCommand("dbo.getLeaveRequest", con);
- 
+
                 cmd.CommandTimeout = Timeout;
                 cmd.CommandType = CommandType.StoredProcedure;
- 
+
                 // รับค่าทีละตัวและจัดการ DBNull หากไม่ได้ส่งค่ามา
                 cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = (object)username ?? DBNull.Value;
                 cmd.Parameters.Add("@startDate", SqlDbType.Date).Value = (object)startDate ?? DBNull.Value;
                 cmd.Parameters.Add("@endDate", SqlDbType.Date).Value = (object)endDate ?? DBNull.Value;
                 cmd.Parameters.Add("@status", SqlDbType.VarChar, 50).Value = (object)status ?? DBNull.Value;
- 
+
                 await con.OpenAsync();
                 using var rd = await cmd.ExecuteReaderAsync();
                 while (await rd.ReadAsync())
@@ -920,15 +919,16 @@ namespace IATMS.contextDB
                         type_leave = rd["type_leave_display"]?.ToString(),
                         start_date = rd["start_date"] != DBNull.Value ? DateOnly.FromDateTime(Convert.ToDateTime(rd["start_date"])) : null,
                         end_date = rd["end_date"] != DBNull.Value ? DateOnly.FromDateTime(Convert.ToDateTime(rd["end_date"])) : null,
- 
+
                         // รองรับค่า NULL สำหรับการลาเต็มวัน
                         start_time = rd["start_time"] != DBNull.Value ? Convert.ToDateTime(rd["start_time"]) : null,
                         end_time = rd["end_time"] != DBNull.Value ? Convert.ToDateTime(rd["end_time"]) : null,
- 
+
                         reason = rd["reason"]?.ToString(),
                         reject_reason = rd["reject_reason"]?.ToString(),
                         status_request = rd["status_display"]?.ToString(),
-                        total_minute = Convert.ToDecimal(rd["total_minute"])
+                        total_minute = Convert.ToDecimal(rd["total_minute"]),
+                        available_actions = rd["available_actions"]?.ToString()
                     });
                 }
             }
@@ -938,32 +938,32 @@ namespace IATMS.contextDB
             }
             return results;
         }
- 
-        public static async Task<bool> PostLeaveRequest(Pay_Leave data)
+
+        public static async Task<bool> PostLeaveRequest(string username, Pay_Leave data)
         {
             try
             {
                 using var con = new SqlConnection(connectionString);
                 using var cmd = new SqlCommand("dbo.postLeaveRequest", con);
- 
+
                 cmd.CommandTimeout = Timeout;
                 cmd.CommandType = CommandType.StoredProcedure;
- 
-                cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = (object)data.oa_user ?? DBNull.Value;
+
+                cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = (object)username ?? DBNull.Value;
                 cmd.Parameters.Add("@type_leave", SqlDbType.VarChar, 50).Value = (object)data.type_leave ?? DBNull.Value;
- 
+
                 // ใช้ DateOnly จาก Model โดยตรง (ถ้า Library รองรับ) หรือแปลงเป็น DateTime
                 cmd.Parameters.Add("@start_date", SqlDbType.Date).Value = data.start_date.ToDateTime(TimeOnly.MinValue);
                 cmd.Parameters.Add("@end_date", SqlDbType.Date).Value = data.end_date.ToDateTime(TimeOnly.MinValue);
- 
+
                 cmd.Parameters.Add("@start_time", SqlDbType.DateTime).Value = (object)data.start_time ?? DBNull.Value;
                 cmd.Parameters.Add("@end_time", SqlDbType.DateTime).Value = (object)data.end_time ?? DBNull.Value;
                 cmd.Parameters.Add("@reason", SqlDbType.NVarChar, -1).Value = (object)data.reason ?? DBNull.Value;
- 
+
                 await con.OpenAsync();
                 await cmd.ExecuteNonQueryAsync();
                 con.Close();
- 
+
                 return true;
             }
             catch (Exception ex)
@@ -971,24 +971,24 @@ namespace IATMS.contextDB
                 throw new Exception("Error at PostLeaveRequest: " + ex.Message);
             }
         }
-        public static async Task<bool> DeleteLeaveRequest(string username , Pay_Delete_Leave data)
+        public static async Task<bool> DeleteLeaveRequest(string username, Pay_Delete_Leave data)
         {
             try
             {
                 using var con = new SqlConnection(connectionString);
                 using var cmd = new SqlCommand("dbo.deleteLeaveRequest", con);
- 
+
                 cmd.CommandTimeout = Timeout;
                 cmd.CommandType = CommandType.StoredProcedure;
- 
+
                 cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = username;
                 cmd.Parameters.Add("@start_date", SqlDbType.Date).Value = data.start_date.ToDateTime(TimeOnly.MinValue);
                 cmd.Parameters.Add("@end_date", SqlDbType.Date).Value = data.end_date.ToDateTime(TimeOnly.MinValue);
- 
+
                 await con.OpenAsync();
                 await cmd.ExecuteNonQueryAsync();
                 con.Close();
- 
+
                 return true;
             }
             catch (Exception ex)
@@ -997,8 +997,90 @@ namespace IATMS.contextDB
             }
         }
 
+        public static async Task<List<Res_Leave_Approval>> GetLeaveApproval(string username, string search_text = null, string team_filter = null)
+        {
+            var results = new List<Res_Leave_Approval>();
+            try
+            {
+                using var con = new SqlConnection(connectionString);
+                using var cmd = new SqlCommand("dbo.getLeaveApproval", con);
+                cmd.CommandTimeout = Timeout;
+                cmd.CommandType = CommandType.StoredProcedure;
 
+                // ส่งพารามิเตอร์ให้ครบทั้ง 3 ตัวตาม Logic การแบ่งสิทธิ์และค้นหา
+                // หมายเหตุ: ใช้ชื่อตัวแปรที่รับเข้ามาจาก Parameter ของฟังก์ชัน (username, search_text, team_filter)
+                cmd.Parameters.AddWithValue("@search_user", username);
+                cmd.Parameters.AddWithValue("@search_text", (object)search_text ?? DBNull.Value);
+                cmd.Parameters.AddWithValue("@team_filter", (object)team_filter ?? DBNull.Value);
 
+                await con.OpenAsync();
+                using var rd = await cmd.ExecuteReaderAsync();
+                while (await rd.ReadAsync())
+                {
+                    results.Add(new Res_Leave_Approval
+                    {
+                        // ข้อมูลพนักงานและสังกัด
+                        oa_user = rd["oa_user"].ToString(),
+                        full_name = rd["full_name"].ToString(),
+                        team = rd["team"].ToString(),
+
+                        // รายละเอียดการลา
+                        type_leave_display = rd["type_leave_display"].ToString(),
+                        start_date = rd["start_date"] != DBNull.Value ? DateOnly.FromDateTime(Convert.ToDateTime(rd["start_date"])) : null,
+                        end_date = rd["end_date"] != DBNull.Value ? DateOnly.FromDateTime(Convert.ToDateTime(rd["end_date"])) : null,
+
+                        // รองรับค่า NULL สำหรับการลาเต็มวัน
+                        start_time = rd["start_time"] != DBNull.Value ? Convert.ToDateTime(rd["start_time"]) : null,
+                        end_time = rd["end_time"] != DBNull.Value ? Convert.ToDateTime(rd["end_time"]) : null,
+
+                        // สถานะและเหตุผล
+                        status_display = rd["status_display"].ToString(),
+                        reason = rd["reason"].ToString(),
+                        reject_reason = rd["reject_reason"].ToString(),
+
+                        // ระยะเวลา (นาทีรวม) สำหรับให้ Frontend แปลงต่อ
+                        total_minute = rd["total_minute"] != DBNull.Value ? Convert.ToInt32(rd["total_minute"]) : 0
+                    });
+                }
+                return results;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error at PostLeaveRequest: " + ex.Message);
+            }
+
+        }
+
+        public static async Task<bool> PostLeaveApproval(string updateUsername, Pay_LeaveApproval data)
+        {
+            try
+            {
+                using var con = new SqlConnection(connectionString);
+                using var cmd = new SqlCommand("dbo.postLeaveApproval", con);
+
+                cmd.CommandTimeout = Timeout;
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                // พารามิเตอร์ต้องตรงกับ SQL Store Procedure
+                cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = (object)data.oa_user ?? DBNull.Value;
+                cmd.Parameters.Add("@start_date", SqlDbType.Date).Value = data.start_date.ToDateTime(TimeOnly.MinValue);
+                cmd.Parameters.Add("@end_date", SqlDbType.Date).Value = data.end_date.ToDateTime(TimeOnly.MinValue);
+                cmd.Parameters.Add("@action", SqlDbType.VarChar, 50).Value = (object)data.action ?? DBNull.Value;
+                cmd.Parameters.Add("@update_user", SqlDbType.VarChar, 50).Value = (object)updateUsername ?? DBNull.Value;
+                cmd.Parameters.Add("@reject_reason", SqlDbType.NVarChar, -1).Value = (object)data.reject_reason ?? DBNull.Value;
+
+                await con.OpenAsync();
+                await cmd.ExecuteNonQueryAsync();
+                con.Close();
+
+                return true;
+            }
+            catch (Exception ex)
+            {
+                // หาก SQL โยน RAISERROR 'กรุณาระบุเหตุผล...' จะมาตกที่ catch นี้
+                throw new Exception(ex.Message);
+            }
+        }
     }
 
 }
