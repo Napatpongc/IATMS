@@ -4,12 +4,14 @@ using IATMS.Components;
 using IATMS.Configurations;
 using IATMS.Models.Authentications;
 using IATMS.Models.Payloads;
+using IATMS.Models.Payloads.AttendanceApproval;
 using IATMS.Models.Payloads.AttendanceChange;
 using IATMS.Models.Payloads.CICO;
 using IATMS.Models.Payloads.Leave;
 using IATMS.Models.Payloads.UserManage;
 using IATMS.Models.Responses;
 using IATMS.Models.Responses.AtendanceChange;
+using IATMS.Models.Responses.AttendanceApproval;
 using IATMS.Models.Responses.CheckinCheckout;
 using IATMS.Models.Responses.DropDown;
 using IATMS.Models.Responses.Holidays;
@@ -785,10 +787,7 @@ namespace IATMS.contextDB
             return results;
         }
 
-<<<<<<< Updated upstream
-        
-=======
->>>>>>> Stashed changes
+
         public static async Task<List<Res_ModalAttChange>> getModalAttChange(string username, DateOnly date)
         {
             var results = new List<Res_ModalAttChange>();
@@ -995,6 +994,144 @@ namespace IATMS.contextDB
             {
                 throw new Exception("Error at PostLeaveRequest: " + ex.Message);
             }
+        }
+
+        public static async Task<List<Res_AttendanceApproval>> getAttApproval(string name, string? search_name, string? search_team)
+        {
+            var results = new List<Res_AttendanceApproval>();
+
+            await using var con = new SqlConnection(connectionString);
+            await using var cmd = new SqlCommand("dbo.getAttendanceApproval", con)
+            {
+                CommandTimeout = Timeout,
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = name ?? (object)DBNull.Value;
+            cmd.Parameters.Add("@search_name", SqlDbType.VarChar, 50).Value = (object)search_name ?? DBNull.Value;
+            cmd.Parameters.Add("@search_team", SqlDbType.VarChar, 50).Value = (object)search_team ?? DBNull.Value;
+
+            await con.OpenAsync();
+            await using var rd = await cmd.ExecuteReaderAsync();
+
+            int iDate = rd.GetOrdinal("at_date");
+
+            while (await rd.ReadAsync())
+            {
+                var dt = rd.IsDBNull(iDate) ? DateTime.MinValue : rd.GetDateTime(iDate);
+
+                results.Add(new Res_AttendanceApproval
+                {
+                    attDate = DateOnly.FromDateTime(dt),
+
+                    changeStatus = rd["change_status"]?.ToString(),
+                    oaUser = rd["oa_user"]?.ToString(),
+
+                    // alias จาก SQL เป็น "ชื่อ-นามสกุล"
+                    fullName = rd["full_name"]?.ToString(),
+
+                    team = rd["team"]?.ToString(),
+
+                    requestReason = rd["request_reason"]?.ToString(),
+
+                    // Check-In
+                    ciTimeOld = rd["ci_time_old"]?.ToString(),
+                    ciAddressOld = rd["ci_address_old"]?.ToString(),
+                    ciRequestReason = rd["ci_request_reason"]?.ToString(),
+                    ciTimeNew = rd["ci_time_new"]?.ToString(),
+                    ciAddressNew = rd["ci_address_new"]?.ToString(),
+
+                    // Check-Out
+                    coTimeOld = rd["co_time_old"]?.ToString(),
+                    coAddressOld = rd["co_address_old"]?.ToString(),
+                    coRequestReason = rd["co_request_reason"]?.ToString(),
+                    coTimeNew = rd["co_time_new"]?.ToString(),
+                    coAddressNew = rd["co_address_new"]?.ToString(),
+                });
+            }
+
+            return results;
+        }
+
+        public static async Task<List<Res_ModalAttApproval>> getModalAttApproval(string username, DateOnly date)
+        {
+            var results = new List<Res_ModalAttApproval>();
+
+            await using var con = new SqlConnection(connectionString);
+            await using var cmd = new SqlCommand("dbo.getModalAttApproval", con)
+            {
+                CommandTimeout = Timeout,
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = username;
+            cmd.Parameters.Add("@at_date", SqlDbType.Date).Value = date.ToDateTime(TimeOnly.MinValue);
+
+            await con.OpenAsync();
+            await using var rd = await cmd.ExecuteReaderAsync();
+
+            // ต้องตรงกับชื่อคอลัมน์ใน SP (ac.at_date)
+            int iDate = rd.GetOrdinal("at_date");
+
+            while (await rd.ReadAsync())
+            {
+                var dt = rd.IsDBNull(iDate) ? DateTime.MinValue : rd.GetDateTime(iDate);
+
+                results.Add(new Res_ModalAttApproval
+                {
+                    oa_user = rd["oa_user"]?.ToString(),
+                    attDate = DateOnly.FromDateTime(dt),
+
+                    // Check-In
+                    ciTimeOld = rd["ci_time_old"]?.ToString(),
+                    ciTimeNew = rd["ci_time_new"]?.ToString(),
+                    ciLocationOld = rd["ci_location_old"]?.ToString(),
+                    ciLocationNew = rd["ci_location_new"]?.ToString(),
+                    ciAddressOld = rd["ci_address_old"]?.ToString(),
+                    ciAddressNew = rd["ci_address_new"]?.ToString(),
+                    ciRequestReason = rd["ci_request_reason"]?.ToString(),
+
+                    // Check-Out
+                    coTimeOld = rd["co_time_old"]?.ToString(),
+                    coTimeNew = rd["co_time_new"]?.ToString(),
+                    coLocationOld = rd["co_location_old"]?.ToString(),
+                    coLocationNew = rd["co_location_new"]?.ToString(),
+                    coAddressOld = rd["co_address_old"]?.ToString(),
+                    coAddressNew = rd["co_address_new"]?.ToString(),
+                    coRequestReason = rd["co_request_reason"]?.ToString(),
+
+                    requestReason = rd["request_reason"]?.ToString(),
+                });
+            }
+
+            return results;
+        }
+
+        public static async Task postAttApproval(string username, post_AttendanceApproval payload)
+        {
+            using var conn = new SqlConnection(connectionString);
+            using var cmd = new SqlCommand("dbo.postAttendanceApproval", conn);
+
+            cmd.CommandTimeout = Timeout;
+            cmd.CommandType = CommandType.StoredProcedure;
+
+            cmd.Parameters.Add("@author", SqlDbType.VarChar, 50).Value = username;
+            cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = payload.oa_user;
+            cmd.Parameters.Add("@at_date", SqlDbType.Date).Value = payload.at_date.ToDateTime(TimeOnly.MinValue);
+            cmd.Parameters.Add("@isApprove", SqlDbType.Bit).Value = payload.isApprove;
+
+            cmd.Parameters.Add("@ci_time_new", SqlDbType.DateTime).Value = (object?)payload.ci_time_new ?? DBNull.Value;
+            cmd.Parameters.Add("@ci_location_new", SqlDbType.VarChar, -1).Value = (object?)payload.ci_location_new ?? DBNull.Value;
+            cmd.Parameters.Add("@ci_address_new", SqlDbType.VarChar, -1).Value = (object?)payload.ci_address_new ?? DBNull.Value;
+
+            cmd.Parameters.Add("@co_time_new", SqlDbType.DateTime).Value = (object?)payload.co_time_new ?? DBNull.Value;
+            cmd.Parameters.Add("@co_location_new", SqlDbType.VarChar, -1).Value = (object?)payload.co_location_new ?? DBNull.Value;
+            cmd.Parameters.Add("@co_address_new", SqlDbType.VarChar, -1).Value = (object?)payload.co_address_new ?? DBNull.Value;
+
+            cmd.Parameters.Add("@rejectReason", SqlDbType.VarChar, 100).Value = (object?)payload.rejectReason ?? DBNull.Value;
+
+            await conn.OpenAsync();
+            await cmd.ExecuteNonQueryAsync();
         }
 
 
