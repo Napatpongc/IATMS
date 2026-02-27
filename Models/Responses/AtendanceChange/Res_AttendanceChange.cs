@@ -45,6 +45,8 @@
         public string coLatlong { get; set; }
         public string coCorrectZone { get; set; }
         public string coReason { get; set; }
+        public string requestReason { get; set; }
+        public string rejectReason { get; set; }
 
     }
 }

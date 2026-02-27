@@ -827,6 +827,9 @@ namespace IATMS.contextDB
                     coLatlong = rd["co_latlong"]?.ToString(),
                     coCorrectZone = rd["co_correct_zone"]?.ToString(),
                     coReason = rd["co_reason"]?.ToString(),
+                    requestReason = rd["request_reason"]?.ToString(),
+                    rejectReason = rd["reject_reason"]?.ToString(),
+
                 });
             }
 
