@@ -51,6 +51,5 @@ namespace AppName_API.Models.Responses.Authentication
         public string Work_Place { get; set; }
         public string email { get; set; }
         public string role_id { get; set; }
-        public int role_level { get; set; }
     }
 }
