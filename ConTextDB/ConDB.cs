@@ -63,7 +63,6 @@ namespace IATMS.contextDB
                     result.profile.Work_Place = rd["Work_Place"]?.ToString();
                     result.profile.email = rd["email"]?.ToString();
                     result.profile.role_id = rd["role_id"]?.ToString();
-                    result.profile.role_level = Convert.ToInt32(rd["role_level"]);
 
                     // --- 2. Mapping Role & Menus (ตาม Res_Role) ---
                     result.role.menu_attendance = rd["menu_attendance"] != DBNull.Value && Convert.ToBoolean(rd["menu_attendance"]);
@@ -828,6 +827,9 @@ namespace IATMS.contextDB
                     coLatlong = rd["co_latlong"]?.ToString(),
                     coCorrectZone = rd["co_correct_zone"]?.ToString(),
                     coReason = rd["co_reason"]?.ToString(),
+                    requestReason = rd["request_reason"]?.ToString(),
+                    rejectReason = rd["reject_reason"]?.ToString(),
+
                 });
             }
 
