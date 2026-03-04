@@ -5,7 +5,10 @@
         public string action { get; set; }          
         public DateOnly attDate { get; set; }        
 
-        public string changeStatus { get; set; }     
+        public string changeStatus { get; set; } 
+        public string changeStatusCode { get; set; }
+
+
         public string requestReason { get; set; }
         public string rejectReason { get; set; }
 

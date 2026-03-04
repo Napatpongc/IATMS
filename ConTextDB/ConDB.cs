@@ -6,13 +6,17 @@ using IATMS.Models.Authentications;
 using IATMS.Models.Payloads;
 using IATMS.Models.Payloads.AttendanceApproval;
 using IATMS.Models.Payloads.AttendanceChange;
+using IATMS.Models.Payloads.AttendanceHistory;
 using IATMS.Models.Payloads.CICO;
+using IATMS.Models.Payloads.Compensation;
 using IATMS.Models.Payloads.Leave;
 using IATMS.Models.Payloads.LeaveApproval;
 using IATMS.Models.Payloads.UserManage;
+using IATMS.Models.Response.Compensation;
 using IATMS.Models.Responses;
 using IATMS.Models.Responses.AtendanceChange;
 using IATMS.Models.Responses.AttendanceApproval;
+using IATMS.Models.Responses.AttendanceHistory;
 using IATMS.Models.Responses.CheckinCheckout;
 using IATMS.Models.Responses.DropDown;
 using IATMS.Models.Responses.Holidays;
@@ -688,7 +692,7 @@ namespace IATMS.contextDB
             try
             {
                 using var con = new SqlConnection(connectionString);
-                using var cmd = new SqlCommand("dbo.postCICO", con);
+                using var cmd = new SqlCommand("dbo.postCICO", con);    
 
                 cmd.CommandTimeout = Timeout; // ใช้ค่า Timeout ที่คุณตั้งไว้
                 cmd.CommandType = CommandType.StoredProcedure;
@@ -757,6 +761,7 @@ namespace IATMS.contextDB
                     // action / status / request reason
                     action = rd["action"] == DBNull.Value ? null : rd["action"].ToString(),
                     changeStatus = rd["change_status"] == DBNull.Value ? null : rd["change_status"].ToString(),
+                    changeStatusCode = rd["change_status_code"] == DBNull.Value ? null : rd["change_status_code"].ToString(),
                     requestReason = rd["request_reason"] == DBNull.Value ? null : rd["request_reason"].ToString(),
                     rejectReason = rd["reject_reason"] == DBNull.Value ? null : rd["reject_reason"].ToString(),
 
@@ -1112,6 +1117,7 @@ namespace IATMS.contextDB
                 results.Add(new Res_AttendanceApproval
                 {
                     attDate = DateOnly.FromDateTime(dt),
+                    changeStatusCode = rd["change_status_code"]?.ToString(),
 
                     changeStatus = rd["change_status"]?.ToString(),
                     oaUser = rd["oa_user"]?.ToString(),
@@ -1222,6 +1228,148 @@ namespace IATMS.contextDB
             await conn.OpenAsync();
             await cmd.ExecuteNonQueryAsync();
         }
+
+        public static async Task<List<Res_AttendanceHistory>> getAttHistory(
+    string username,
+    Pay_AttendanceHistory payload
+)
+        {
+            var results = new List<Res_AttendanceHistory>();
+
+            await using var con = new SqlConnection(connectionString);
+            await using var cmd = new SqlCommand("dbo.getAttendanceHistory", con)
+            {
+                CommandTimeout = Timeout,
+                CommandType = CommandType.StoredProcedure
+            };
+
+            // user ที่เรียก (ถ้าต้องใช้เรื่อง permission ใน SP)
+            cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = username;
+            
+            // ---- payload filters ----
+            cmd.Parameters.Add("@start_date", SqlDbType.Date).Value =
+                payload.start_date.HasValue
+                    ? payload.start_date.Value.ToDateTime(TimeOnly.MinValue)
+                    : (object)DBNull.Value;
+
+            cmd.Parameters.Add("@end_date", SqlDbType.Date).Value =
+                payload.end_date.HasValue
+                    ? payload.end_date.Value.ToDateTime(TimeOnly.MinValue)
+                    : (object)DBNull.Value;
+
+            cmd.Parameters.Add("@team", SqlDbType.VarChar, 50).Value =
+                (object?)payload.team ?? DBNull.Value;
+
+            cmd.Parameters.Add("@search_text", SqlDbType.NVarChar, 200).Value =
+                (object?)payload.search_text ?? DBNull.Value;
+
+            cmd.Parameters.Add("@ci_time_status", SqlDbType.VarChar, 50).Value =
+                (object?)payload.ci_time_status ?? DBNull.Value;
+
+            cmd.Parameters.Add("@co_time_status", SqlDbType.VarChar, 50).Value =
+                (object?)payload.co_time_status ?? DBNull.Value;
+
+            cmd.Parameters.Add("@ci_location_status", SqlDbType.VarChar, 50).Value =
+                (object?)payload.ci_location_status ?? DBNull.Value;
+
+            cmd.Parameters.Add("@co_location_status", SqlDbType.VarChar, 50).Value =
+                (object?)payload.co_location_status ?? DBNull.Value;
+
+            await con.OpenAsync();
+            await using var rd = await cmd.ExecuteReaderAsync();
+
+            // *** ชื่อคอลัมน์ต้องตรงกับที่ SP SELECT ออกมา ***
+            int iDate = rd.GetOrdinal("date");
+
+            while (await rd.ReadAsync())
+            {
+                var dt = rd.GetDateTime(iDate);
+
+                results.Add(new Res_AttendanceHistory
+                {
+                    attDate = DateOnly.FromDateTime(dt),
+
+                    oauser = rd["oa_user"]?.ToString(),
+                    fullName = rd["full_name"]?.ToString(),
+                    team = rd["team"]?.ToString(),
+
+                    ciTime = rd["ci_time"]?.ToString(),
+                    ciCorrectTime = rd["ci_correct_time"]?.ToString(),
+                    ciAddress = rd["ci_address"]?.ToString(),
+                    ciCorrectZone = rd["ci_correct_zone"]?.ToString(),
+                    ciReason = rd["ci_reason"]?.ToString(),
+
+                    coTime = rd["co_time"]?.ToString(),
+                    coCorrectTime = rd["co_correct_time"]?.ToString(),
+                    coAddress = rd["co_address"]?.ToString(),
+                    coCorrectZone = rd["co_correct_zone"]?.ToString(),
+                    coReason = rd["co_reason"]?.ToString()
+                });
+            }
+
+            return results;
+        }
+
+        public static async Task<List<Res_Compensation>> getCompensation(
+    string username,
+    Pay_Compensation payload
+)
+        {
+            var results = new List<Res_Compensation>();
+
+            await using var con = new SqlConnection(connectionString);
+            await using var cmd = new SqlCommand("dbo.getCompensation", con)
+            {
+                CommandTimeout = Timeout,
+                CommandType = CommandType.StoredProcedure
+            };
+
+            // คนที่เรียก (ใช้เช็คสิทธิ์ใน SP ถ้าต้องการ)
+            cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = username;
+
+            // filters จาก payload
+            cmd.Parameters.Add("@search_text", SqlDbType.NVarChar, 200).Value =
+                (object?)payload.search_text ?? DBNull.Value;
+
+            cmd.Parameters.Add("@team", SqlDbType.VarChar, 50).Value =
+                (object?)payload.team ?? DBNull.Value;
+
+            cmd.Parameters.Add("@start_date", SqlDbType.Date).Value =
+                payload.start_date.HasValue ? payload.start_date.Value.Date : (object)DBNull.Value;
+
+            cmd.Parameters.Add("@end_date", SqlDbType.Date).Value =
+                payload.end_date.HasValue ? payload.end_date.Value.Date : (object)DBNull.Value;
+
+            await con.OpenAsync();
+            await using var rd = await cmd.ExecuteReaderAsync();
+
+            // ให้ “ชื่อคอลัมน์” ตรงกับที่ SP ส่งออกมา
+            int iMonthYear = rd.GetOrdinal("month_year");
+            int iOAUser = rd.GetOrdinal("oa_user");
+            int iFullName = rd.GetOrdinal("full_name");
+            int iTeam = rd.GetOrdinal("team");
+            int iWorkHours = rd.GetOrdinal("work_hours");
+            int iAmount = rd.GetOrdinal("amount");
+
+            while (await rd.ReadAsync())
+            {
+                results.Add(new Res_Compensation
+                {
+                    monthYear = rd.IsDBNull(iMonthYear) ? "" : rd.GetString(iMonthYear),
+                    oaUser = rd.IsDBNull(iOAUser) ? "" : rd.GetString(iOAUser),
+                    fullName = rd.IsDBNull(iFullName) ? "" : rd.GetString(iFullName),
+                    team = rd.IsDBNull(iTeam) ? "" : rd.GetString(iTeam),
+
+                    // รองรับได้ทั้ง int/decimal
+                    workHours = rd.IsDBNull(iWorkHours) ? 0m : Convert.ToDecimal(rd.GetValue(iWorkHours)),
+                    amount = rd.IsDBNull(iAmount) ? 0m : Convert.ToDecimal(rd.GetValue(iAmount)),
+                });
+            }
+
+            return results;
+        }
+
+
     }
 
 }

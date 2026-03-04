@@ -3,6 +3,9 @@
     public class Res_AttendanceApproval
     {
         public DateOnly attDate { get; set; }
+        public string changeStatusCode { get; set; }
+
+
 
         public string changeStatus { get; set; }
         public string oaUser { get; set; }
