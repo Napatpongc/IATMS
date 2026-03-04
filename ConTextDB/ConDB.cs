@@ -1222,6 +1222,43 @@ namespace IATMS.contextDB
             await conn.OpenAsync();
             await cmd.ExecuteNonQueryAsync();
         }
+
+        public static async Task<object> GetHomeDashboard(string username)
+        {
+            // ใช้ dynamic หรือ object เพราะแต่ละ Role คืนค่าคอลัมน์ไม่เหมือนกัน
+            // หรือจะสร้างเป็น Dictionary<string, object> ก็ได้ครับ
+            var result = new Dictionary<string, object>();
+
+            await using var con = new SqlConnection(connectionString);
+            await using var cmd = new SqlCommand("dbo.getHomeDashboard", con)
+            {
+                CommandTimeout = Timeout,
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = username;
+
+            await con.OpenAsync();
+            await using var rd = await cmd.ExecuteReaderAsync();
+
+            if (await rd.ReadAsync())
+            {
+                // วนลูปเก็บทุกคอลัมน์ที่ SP ส่งมา ไม่ว่าจะเป็น Role ไหน
+                for (int i = 0; i < rd.FieldCount; i++)
+                {
+                    string colName = rd.GetName(i);
+                    object colValue = rd.IsDBNull(i) ? null : rd.GetValue(i);
+
+                    // จัดการกรณีพิเศษเช่น bit ให้เป็น bool หรือ decimal ให้เป็น string
+                    if (colValue is bool b)
+                        result.Add(colName, b);
+                    else
+                        result.Add(colName, colValue?.ToString());
+                }
+            }
+
+            return result.Count > 0 ? result : null;
+        }
     }
 
 }
