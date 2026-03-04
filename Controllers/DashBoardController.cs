@@ -1,14 +1,10 @@
-﻿using AppName_API.Models.Responses.Authentication;
-using IATMS.Components;
+﻿using IATMS.Components;
 using IATMS.contextDB;
 using IATMS.Models.Authentications;
 using IATMS.Models.Payloads;
-using IATMS.Models.Responses;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 
 namespace IATMS.Controllers
@@ -16,16 +12,16 @@ namespace IATMS.Controllers
     [Route("api/")]
     [ApiController]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    public class DropDownController : ControllerBase
+    public class DashBoardController : Controller
     {
         private readonly TokenValidationParameters _tokenValidationParameters;
-        public DropDownController(TokenValidationParameters tokenValidationParameters)
+        public DashBoardController(TokenValidationParameters tokenValidationParameters)
         {
             _tokenValidationParameters = tokenValidationParameters;
         }
 
-        [HttpGet("getDropdown")]
-        public async Task<IActionResult> GetDropdown([FromQuery] Req_Dropdown req)
+        [HttpGet("getHomeDashboard")]
+        public async Task<IActionResult> GetHomeDashboard()
         {
             AccessTokenProps info;
             try
@@ -40,13 +36,15 @@ namespace IATMS.Controllers
 
             try
             {
-                // ตรวจสอบว่ามีค่าส่งมาใน req.type หรือไม่ (ดึงจาก ?type=...)
-                if (req == null || string.IsNullOrEmpty(req.type))
+                // ส่ง Username (oa_user) ที่ได้จาก Token เข้าไปใน ConDB
+                // สมมติว่าใน ConDB มี Method ชื่อ GetHomeDashboardData ที่รับค่า oa_user
+                var result = await ConDB.GetHomeDashboard(info.username);
+
+                if (result == null)
                 {
-                    return BadRequest(new { message = "Type is required in Query String (?type=...)" });
+                    return NotFound(new { message = "No dashboard data found for this user." });
                 }
 
-                var result = await ConDB.GetDropdownList(req);
                 return Ok(result);
             }
             catch (Exception ex)
@@ -55,6 +53,4 @@ namespace IATMS.Controllers
             }
         }
     }
-
-    
 }
