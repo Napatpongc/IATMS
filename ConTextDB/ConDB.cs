@@ -1342,31 +1342,30 @@ namespace IATMS.contextDB
                 CommandType = CommandType.StoredProcedure
             };
 
-            // คนที่เรียก (ใช้เช็คสิทธิ์ใน SP ถ้าต้องการ)
             cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = username;
 
-            // filters จาก payload
             cmd.Parameters.Add("@search_text", SqlDbType.NVarChar, 200).Value =
                 (object?)payload.search_text ?? DBNull.Value;
 
             cmd.Parameters.Add("@team", SqlDbType.VarChar, 50).Value =
                 (object?)payload.team ?? DBNull.Value;
 
-            cmd.Parameters.Add("@start_date", SqlDbType.Date).Value =
-                payload.start_date.HasValue ? payload.start_date.Value.Date : (object)DBNull.Value;
+            // ✅ YYYY-MM (varchar(7)) -> ส่งเข้า SP
+            cmd.Parameters.Add("@start_date", SqlDbType.VarChar, 7).Value =
+                string.IsNullOrWhiteSpace(payload.start_month_year) ? (object)DBNull.Value : payload.start_month_year!.Trim();
 
-            cmd.Parameters.Add("@end_date", SqlDbType.Date).Value =
-                payload.end_date.HasValue ? payload.end_date.Value.Date : (object)DBNull.Value;
+            cmd.Parameters.Add("@end_date", SqlDbType.VarChar, 7).Value =
+                string.IsNullOrWhiteSpace(payload.end_month_year) ? (object)DBNull.Value : payload.end_month_year!.Trim();
 
             await con.OpenAsync();
             await using var rd = await cmd.ExecuteReaderAsync();
 
-            // ให้ “ชื่อคอลัมน์” ตรงกับที่ SP ส่งออกมา
-            int iMonthYear = rd.GetOrdinal("month_year");
-            int iOAUser = rd.GetOrdinal("oa_user");
-            int iFullName = rd.GetOrdinal("full_name");
+            // ชื่อต้องตรงกับ alias ที่ SP select ออกมา
+            int iMonthYear = rd.GetOrdinal("monthYear");
+            int iOAUser = rd.GetOrdinal("oaUser");
+            int iFullName = rd.GetOrdinal("fullName");
             int iTeam = rd.GetOrdinal("team");
-            int iWorkHours = rd.GetOrdinal("work_hours");
+            int iWorkHours = rd.GetOrdinal("workHours");
             int iAmount = rd.GetOrdinal("amount");
 
             while (await rd.ReadAsync())
@@ -1377,8 +1376,6 @@ namespace IATMS.contextDB
                     oaUser = rd.IsDBNull(iOAUser) ? "" : rd.GetString(iOAUser),
                     fullName = rd.IsDBNull(iFullName) ? "" : rd.GetString(iFullName),
                     team = rd.IsDBNull(iTeam) ? "" : rd.GetString(iTeam),
-
-                    // รองรับได้ทั้ง int/decimal
                     workHours = rd.IsDBNull(iWorkHours) ? 0m : Convert.ToDecimal(rd.GetValue(iWorkHours)),
                     amount = rd.IsDBNull(iAmount) ? 0m : Convert.ToDecimal(rd.GetValue(iAmount)),
                 });
@@ -1520,6 +1517,40 @@ namespace IATMS.contextDB
 
             return results;
         }
+        public static async Task<List<Res_MonthYear>> getMonthYearCompensation(
+    string username,
+    string team
+)
+        {
+            var results = new List<Res_MonthYear>();
+
+            await using var con = new SqlConnection(connectionString);
+            await using var cmd = new SqlCommand("dbo.getMonthYearCompensation", con)
+            {
+                CommandTimeout = Timeout,
+                CommandType = CommandType.StoredProcedure
+            };
+
+            cmd.Parameters.Add("@oauser", SqlDbType.VarChar, 50).Value = username;
+            cmd.Parameters.Add("@team", SqlDbType.VarChar, 50).Value = team;
+
+           
+
+            await con.OpenAsync();
+            await using var rd = await cmd.ExecuteReaderAsync();
+
+            while (await rd.ReadAsync())
+            {
+                results.Add(new Res_MonthYear
+                {
+                    monthYear = rd["min_date"]?.ToString(),
+
+                });
+            }
+
+            return results;
+        }
+
 
     }
 
