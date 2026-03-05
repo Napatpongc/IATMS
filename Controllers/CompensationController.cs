@@ -50,5 +50,34 @@ namespace IATMS.Controllers
 
             }
         }
+
+        [HttpGet("getMonthYearCompensation")]
+        public async Task<IActionResult> getMonthYearCompensation([FromQuery] Pay_MonthYearCompensation payload)
+        {
+            AccessTokenProps info;
+            try
+            {
+                info = JwtToken.AccessTokenValidation(Request, _tokenValidationParameters);
+            }
+            catch (Exception ex)
+            {
+                return Unauthorized();
+            }
+            try
+            {
+                var result = await ConDB.getMonthYearCompensation(info.username, payload.team);
+                return Ok(result);
+
+            }
+            catch (Exception ex)
+            {
+                return Unauthorized(new
+                {
+                    res_code = 401,
+                    message = "สิทธิ์การเข้าใช้งานไม่ถูกต้องหรือหมดอายุ"
+                });
+
+            }
+        }
     }
 }

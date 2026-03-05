@@ -15,4 +15,10 @@
         // จำนวนเงิน (บาท)
         public decimal amount { get; set; }
     }
+
+    public class Res_MonthYear
+    {
+        // เดือน-ปี เช่น "01/2025"
+        public string monthYear { get; set; }
+    }
 }
