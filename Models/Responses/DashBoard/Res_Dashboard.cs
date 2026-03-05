@@ -2,40 +2,38 @@
 {
     public class BaseDashboardResponse
     {
-        public bool MenuIntern { get; set; }
-        public bool MenuTeamled { get; set; }
-        public bool MenuAdmin { get; set; }
-        public bool MenuManager { get; set; }
-        public string Displaydate { get; set; }
+        // ปรับชื่อให้ตรงกับ SQL (menu_intern, menu_teamled, ...)
+        public bool menu_intern { get; set; }
+        public bool menu_teamled { get; set; }
+        public bool menu_admin { get; set; }
+        public bool menu_manager { get; set; }
+        
     }
 
     public class StaffDashboardResponse : BaseDashboardResponse
     {
-        public string CheckIn { get; set; }
-        public string CheckOut { get; set; }
-
-        public string CiAddress { get; set; }
-        public string CoAddress { get; set; }
-
-        public int WorkingMinutes { get; set; }
-        public int ApproveLeave { get; set; }
-        public int PendingLeave { get; set; }
-        public int RejectLeave { get; set; }
+        public string check_in { get; set; }
+        public string check_out { get; set; }
+        public string ci_address { get; set; }
+        public string co_address { get; set; }
+        public TimeOnly working_hour { get; set; }
+        public int approve_leave { get; set; }
+        public int pending_leave { get; set; }
+        public int reject_leave { get; set; }
+        public string displaydate { get; set; }
     }
 
     public class ManagementDashboardResponse : BaseDashboardResponse
     {
-        public string CheckInSummary { get; set; }
-        public string CiLateCount { get; set; }
-        public string CiOutsideCount { get; set; }
-
-        public string CoSummary { get; set; }
-        public string CoEarlyCount { get; set; }
-        public string CoOutsideCount { get; set; }
-
-        public int PendingRequests { get; set; }
+        public string check_in_summary { get; set; }
+        public string ci_late_count { get; set; }
+        public string ci_outside_count { get; set; }
+        public string co_summary { get; set; }
+        public string co_early_count { get; set; }
+        public string co_outside_count { get; set; }
+        public int pending_requests { get; set; }
+        public string displaydate { get; set; }
     }
-
     public class AdminDashboardResponse : BaseDashboardResponse
     {
 

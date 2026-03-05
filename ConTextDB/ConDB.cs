@@ -12,18 +12,21 @@ using IATMS.Models.Payloads.Compensation;
 using IATMS.Models.Payloads.Leave;
 using IATMS.Models.Payloads.LeaveApproval;
 using IATMS.Models.Payloads.UserManage;
+using IATMS.Models.Payloads.WorkHourHistory;
 using IATMS.Models.Response.Compensation;
 using IATMS.Models.Responses;
 using IATMS.Models.Responses.AtendanceChange;
 using IATMS.Models.Responses.AttendanceApproval;
 using IATMS.Models.Responses.AttendanceHistory;
 using IATMS.Models.Responses.CheckinCheckout;
+using IATMS.Models.Responses.DashBoard;
 using IATMS.Models.Responses.DropDown;
 using IATMS.Models.Responses.Holidays;
 using IATMS.Models.Responses.Leave;
 using IATMS.Models.Responses.LeaveApproval;
 using IATMS.Models.Responses.Role;
 using IATMS.Models.Responses.User_Manage;
+using IATMS.Models.Responses.WorkHourHistory;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
@@ -911,7 +914,6 @@ namespace IATMS.contextDB
                 cmd.CommandTimeout = Timeout;
                 cmd.CommandType = CommandType.StoredProcedure;
 
-                // รับค่าทีละตัวและจัดการ DBNull หากไม่ได้ส่งค่ามา
                 cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = (object)username ?? DBNull.Value;
                 cmd.Parameters.Add("@startDate", SqlDbType.Date).Value = (object)startDate ?? DBNull.Value;
                 cmd.Parameters.Add("@endDate", SqlDbType.Date).Value = (object)endDate ?? DBNull.Value;
@@ -921,24 +923,35 @@ namespace IATMS.contextDB
                 using var rd = await cmd.ExecuteReaderAsync();
                 while (await rd.ReadAsync())
                 {
-                    results.Add(new Res_Leave
+                    var item = new Res_Leave
                     {
                         oa_user = rd["oa_user"]?.ToString(),
-                        // ดึงจากคอลัมน์ภาษาอังกฤษที่แก้ใหม่ใน SQL
                         type_leave = rd["type_leave_display"]?.ToString(),
                         start_date = rd["start_date"] != DBNull.Value ? DateOnly.FromDateTime(Convert.ToDateTime(rd["start_date"])) : null,
                         end_date = rd["end_date"] != DBNull.Value ? DateOnly.FromDateTime(Convert.ToDateTime(rd["end_date"])) : null,
-
-                        // รองรับค่า NULL สำหรับการลาเต็มวัน
                         start_time = rd["start_time"] != DBNull.Value ? Convert.ToDateTime(rd["start_time"]) : null,
                         end_time = rd["end_time"] != DBNull.Value ? Convert.ToDateTime(rd["end_time"]) : null,
-
                         reason = rd["reason"]?.ToString(),
                         reject_reason = rd["reject_reason"]?.ToString(),
                         status_request = rd["status_display"]?.ToString(),
-                        total_minute = Convert.ToDecimal(rd["total_minute"]),
-                        available_actions = rd["available_actions"]?.ToString()
-                    });
+                        available_actions = rd["available_actions"]?.ToString(),
+
+                        // --- รับค่า 2 คอลัมน์ใหม่ที่แก้ใน SQL ---
+                        total_day = rd["total_day"] != DBNull.Value ? Convert.ToInt32(rd["total_day"]) : 0
+                    };
+
+                    // แปลง SQL TIME (TimeSpan) เป็น TimeOnly
+                    if (rd["working_hour"] != DBNull.Value)
+                    {
+                        var ts = (TimeSpan)rd["working_hour"];
+                        item.working_hour = TimeOnly.FromTimeSpan(ts);
+                    }
+                    else
+                    {
+                        item.working_hour = new TimeOnly(0, 0);
+                    }
+
+                    results.Add(item);
                 }
             }
             catch (Exception ex)
@@ -1016,8 +1029,6 @@ namespace IATMS.contextDB
                 cmd.CommandTimeout = Timeout;
                 cmd.CommandType = CommandType.StoredProcedure;
 
-                // ส่งพารามิเตอร์ให้ครบทั้ง 3 ตัวตาม Logic การแบ่งสิทธิ์และค้นหา
-                // หมายเหตุ: ใช้ชื่อตัวแปรที่รับเข้ามาจาก Parameter ของฟังก์ชัน (username, search_text, team_filter)
                 cmd.Parameters.AddWithValue("@search_user", username);
                 cmd.Parameters.AddWithValue("@search_text", (object)search_text ?? DBNull.Value);
                 cmd.Parameters.AddWithValue("@team_filter", (object)team_filter ?? DBNull.Value);
@@ -1026,38 +1037,48 @@ namespace IATMS.contextDB
                 using var rd = await cmd.ExecuteReaderAsync();
                 while (await rd.ReadAsync())
                 {
-                    results.Add(new Res_Leave_Approval
+                    var item = new Res_Leave_Approval
                     {
-                        // ข้อมูลพนักงานและสังกัด
                         oa_user = rd["oa_user"].ToString(),
                         full_name = rd["full_name"].ToString(),
                         team = rd["team"].ToString(),
 
-                        // รายละเอียดการลา
                         type_leave_display = rd["type_leave_display"].ToString(),
+                        // ใช้ DateOnly ตาม Model ที่คุณตั้งไว้
                         start_date = rd["start_date"] != DBNull.Value ? DateOnly.FromDateTime(Convert.ToDateTime(rd["start_date"])) : null,
                         end_date = rd["end_date"] != DBNull.Value ? DateOnly.FromDateTime(Convert.ToDateTime(rd["end_date"])) : null,
 
-                        // รองรับค่า NULL สำหรับการลาเต็มวัน
                         start_time = rd["start_time"] != DBNull.Value ? Convert.ToDateTime(rd["start_time"]) : null,
                         end_time = rd["end_time"] != DBNull.Value ? Convert.ToDateTime(rd["end_time"]) : null,
 
-                        // สถานะและเหตุผล
                         status_display = rd["status_display"].ToString(),
-                        reason = rd["reason"].ToString(),
-                        reject_reason = rd["reject_reason"].ToString(),
+                        reason = rd["reason"]?.ToString(),
+                        reject_reason = rd["reject_reason"]?.ToString(),
 
-                        // ระยะเวลา (นาทีรวม) สำหรับให้ Frontend แปลงต่อ
-                        total_minute = rd["total_minute"] != DBNull.Value ? Convert.ToInt32(rd["total_minute"]) : 0
-                    });
+                        // --- เปลี่ยนจาก total_minute มาเป็น 2 คอลัมน์ใหม่ ---
+                        total_day = rd["total_day"] != DBNull.Value ? Convert.ToInt32(rd["total_day"]) : 0
+                    };
+
+                    // อ่านค่าจาก SQL TIME (TimeSpan) เข้าสู่ TimeOnly
+                    if (rd["working_hour"] != DBNull.Value)
+                    {
+                        var ts = (TimeSpan)rd["working_hour"];
+                        item.working_hour = TimeOnly.FromTimeSpan(ts);
+                    }
+                    else
+                    {
+                        item.working_hour = new TimeOnly(0, 0);
+                    }
+
+                    results.Add(item);
                 }
                 return results;
             }
             catch (Exception ex)
             {
-                throw new Exception("Error at PostLeaveRequest: " + ex.Message);
+                // แก้ไขชื่อ Error ให้ตรงกับชื่อฟังก์ชันเพื่อการ Debug ที่ง่ายขึ้น
+                throw new Exception("Error at GetLeaveApproval: " + ex.Message);
             }
-
         }
 
         public static async Task<bool> PostLeaveApproval(string updateUsername, Pay_LeaveApproval data)
@@ -1310,10 +1331,7 @@ namespace IATMS.contextDB
             return results;
         }
 
-        public static async Task<List<Res_Compensation>> getCompensation(
-    string username,
-    Pay_Compensation payload
-)
+        public static async Task<List<Res_Compensation>> getCompensation(string username,Pay_Compensation payload)
         {
             var results = new List<Res_Compensation>();
 
@@ -1369,43 +1387,139 @@ namespace IATMS.contextDB
             return results;
         }
 
-            public static async Task<object> GetHomeDashboard(string username)
+        public static async Task<BaseDashboardResponse> GetHomeDashboard(string username)
         {
-            // ใช้ dynamic หรือ object เพราะแต่ละ Role คืนค่าคอลัมน์ไม่เหมือนกัน
-            // หรือจะสร้างเป็น Dictionary<string, object> ก็ได้ครับ
-            var result = new Dictionary<string, object>();
- 
             await using var con = new SqlConnection(connectionString);
             await using var cmd = new SqlCommand("dbo.getHomeDashboard", con)
             {
                 CommandTimeout = Timeout,
                 CommandType = CommandType.StoredProcedure
             };
- 
+
             cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = username;
- 
+
             await con.OpenAsync();
             await using var rd = await cmd.ExecuteReaderAsync();
- 
+
             if (await rd.ReadAsync())
             {
-                // วนลูปเก็บทุกคอลัมน์ที่ SP ส่งมา ไม่ว่าจะเป็น Role ไหน
-                for (int i = 0; i < rd.FieldCount; i++)
+                bool isIntern = Convert.ToBoolean(rd["menu_intern"]);
+                bool isTeamLead = Convert.ToBoolean(rd["menu_teamled"]);
+                bool isManager = Convert.ToBoolean(rd["menu_manager"]);
+                bool isAdmin = Convert.ToBoolean(rd["menu_admin"]);
+
+                BaseDashboardResponse response = null;
+
+                if (isIntern)
                 {
-                    string colName = rd.GetName(i);
-                    object colValue = rd.IsDBNull(i) ? null : rd.GetValue(i);
- 
-                    // จัดการกรณีพิเศษเช่น bit ให้เป็น bool หรือ decimal ให้เป็น string
-                    if (colValue is bool b)
-                        result.Add(colName, b);
+                    var staff = new StaffDashboardResponse();
+                    staff.check_in = rd["check_in"]?.ToString();
+                    staff.check_out = rd["check_out"]?.ToString();
+                    staff.ci_address = rd["ci_address"]?.ToString();
+                    staff.co_address = rd["co_address"]?.ToString();
+
+                    // อ่านค่าจาก SQL TIME เป็น TimeOnly
+                    if (rd["working_hour"] != DBNull.Value)
+                    {
+                        staff.working_hour = TimeOnly.FromTimeSpan((TimeSpan)rd["working_hour"]);
+                    }
                     else
-                        result.Add(colName, colValue?.ToString());
+                    {
+                        staff.working_hour = new TimeOnly(0, 0);
+                    }
+
+                    staff.approve_leave = rd["approve_leave"] != DBNull.Value ? Convert.ToInt32(rd["approve_leave"]) : 0;
+                    staff.pending_leave = rd["pending_leave"] != DBNull.Value ? Convert.ToInt32(rd["pending_leave"]) : 0;
+                    staff.reject_leave = rd["reject_leave"] != DBNull.Value ? Convert.ToInt32(rd["reject_leave"]) : 0;
+                    staff.displaydate = rd["displaydate"]?.ToString();
+                    response = staff;
+                }
+                else if (isTeamLead || isManager)
+                {
+                    var mgmt = new ManagementDashboardResponse();
+                    mgmt.check_in_summary = rd["check_in_summary"]?.ToString();
+                    mgmt.ci_late_count = rd["ci_late_count"]?.ToString();
+                    mgmt.ci_outside_count = rd["ci_outside_count"]?.ToString();
+                    mgmt.co_summary = rd["co_summary"]?.ToString();
+                    mgmt.co_early_count = rd["co_early_count"]?.ToString();
+                    mgmt.co_outside_count = rd["co_outside_count"]?.ToString();
+                    mgmt.pending_requests = rd["pending_requests"] != DBNull.Value ? Convert.ToInt32(rd["pending_requests"]) : 0;
+                    mgmt.displaydate = rd["displaydate"]?.ToString();
+                    response = mgmt;
+                }
+                else if (isAdmin)
+                {
+                    response = new AdminDashboardResponse();
+                }
+
+                // Map ค่าส่วนกลาง (Common fields)
+                if (response != null)
+                {
+                    response.menu_intern = isIntern;
+                    response.menu_teamled = isTeamLead;
+                    response.menu_manager = isManager;
+                    response.menu_admin = isAdmin;
+                }
+
+                return response;
+            }
+
+            return null;
+        }
+        public static async Task<List<Res_HourHistory>> getHourHistory(string username, Pay_HourHistory payload)
+        {
+            var results = new List<Res_HourHistory>();
+            await using var con = new SqlConnection(connectionString);
+            await using var cmd = new SqlCommand("dbo.getHourHistory", con)
+            {
+                CommandTimeout = 120,
+                CommandType = CommandType.StoredProcedure
+            };
+
+            // ส่ง Parameters (เช็ค NULL ให้เรียบร้อย)
+            cmd.Parameters.AddWithValue("@oa_user", username);
+            cmd.Parameters.AddWithValue("@startDate", (object)payload.start_date ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@endDate", (object)payload.end_date ?? DBNull.Value);
+            cmd.Parameters.AddWithValue("@team_code", (object)payload.team_code ?? DBNull.Value);
+
+            try
+            {
+                await con.OpenAsync();
+                await using var reader = await cmd.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    var item = new Res_HourHistory
+                    {
+                        oa_user = reader["oa_user"]?.ToString(),
+                        full_name = reader["full_name"]?.ToString(),
+                        team_code = reader["team_code"]?.ToString(),
+                        at_date = reader["at_date"] != DBNull.Value
+                                    ? Convert.ToDateTime(reader["at_date"]).ToString("dd/MM/yyyy")
+                                    : "-"
+                    };
+
+                    if (reader["working_hour"] != DBNull.Value)
+                    {
+                        var timeSpanValue = (TimeSpan)reader["working_hour"];
+                        item.WorkingHour = TimeOnly.FromTimeSpan(timeSpanValue);
+                    }
+                    else
+                    {
+                        item.WorkingHour = new TimeOnly(0, 0);
+                    }
+
+                    results.Add(item);
                 }
             }
- 
-            return result.Count > 0 ? result : null;
-        }
+            catch (Exception ex)
+            {
+                // แนะนำให้ใช้ Logging แทนการ Throw Message ตรงๆ ใน Product จริง
+                throw new Exception("Error while fetching hour history: " + ex.Message);
+            }
 
+            return results;
+        }
 
     }
 

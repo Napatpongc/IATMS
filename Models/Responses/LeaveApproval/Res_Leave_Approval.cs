@@ -16,6 +16,7 @@
         public string reason { get; set; }
         public string reject_reason { get; set; }
 
-        public int? total_minute { get; set; }
+        public int total_day { get; set; }
+        public TimeOnly working_hour { get; set; }
     }
 }

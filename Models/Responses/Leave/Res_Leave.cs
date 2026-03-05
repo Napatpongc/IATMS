@@ -11,7 +11,8 @@
         public string reason { get; set; }
         public string reject_reason { get; set; }
         public string status_request { get; set; }
-        public decimal total_minute { get; set; }
+        public int total_day { get; set; }
+        public TimeOnly working_hour { get; set; }
         public string available_actions { get; set; }
     }
 }
