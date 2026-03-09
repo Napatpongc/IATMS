@@ -16,5 +16,10 @@ namespace IATMS.Models.Payloads
         public string holidayName { get; set; }
 
         public bool isActive { get; set; }
+
+        public bool isEdit { get; set; }
+
+
+
     }
 }

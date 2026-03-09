@@ -56,7 +56,7 @@ namespace IATMS.Controllers
             }
             try
             {
-                await ConDB.PostHolidays(Payload.holidayDate,Payload.holidayName,Payload.isActive, info.username);
+                await ConDB.PostHolidays(Payload.holidayDate,Payload.holidayName,Payload.isActive,Payload.isEdit, info.username);
                 return Ok(new { Success = true });
 
             }

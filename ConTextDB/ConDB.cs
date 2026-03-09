@@ -428,7 +428,7 @@ namespace IATMS.contextDB
         }
 
 
-        public static async Task PostHolidays(DateOnly holydayDate, string holydayName, bool isActive, string username)
+        public static async Task PostHolidays(DateOnly holydayDate, string holydayName, bool isActive,bool isEdit, string username)
         {
             try
             {
@@ -441,6 +441,7 @@ namespace IATMS.contextDB
                 cmd.Parameters.Add("@holidayDate", SqlDbType.Date).Value = holydayDate;
                 cmd.Parameters.Add("@holidayName", SqlDbType.VarChar, 100).Value = holydayName;
                 cmd.Parameters.Add("@isActive", SqlDbType.Bit).Value = isActive;
+                cmd.Parameters.Add("@isEdit", SqlDbType.Bit).Value = isEdit;
                 cmd.Parameters.Add("@username", SqlDbType.VarChar, 50).Value = username;
 
                 await conn.OpenAsync();
@@ -823,16 +824,24 @@ namespace IATMS.contextDB
                 results.Add(new Res_ModalAttChange
                 {
                     attDate = DateOnly.FromDateTime(dt),
-                    ciTime = rd["ci_time"]?.ToString(),
+                    ciTimeOld = rd["ci_time_old"]?.ToString(),
+                    ciTimeNew = rd["ci_time_new"]?.ToString(),
                     ciCorrectTime = rd["ci_correct_time"]?.ToString(),
-                    ciAddress = rd["ci_address"]?.ToString(),
-                    ciLatlong = rd["ci_latlong"]?.ToString(),
+                    ciAddressOld = rd["ci_address_old"]?.ToString(),
+                    ciAddressNew = rd["ci_address_new"]?.ToString(),
+                    ciLatlongOld = rd["ci_latlong_old"]?.ToString(),
+                    ciLatlongNew = rd["ci_latlong_new"]?.ToString(),
+
                     ciCorrectZone = rd["ci_correct_zone"]?.ToString(),
                     ciReason = rd["ci_reason"]?.ToString(),
-                    coTime = rd["co_time"]?.ToString(),
+                    coTimeOld = rd["co_time_old"]?.ToString(),
+                    coTimeNew = rd["co_time_new"]?.ToString(),
                     coCorrectTime = rd["co_correct_time"]?.ToString(),
-                    coAddress = rd["co_address"]?.ToString(),
-                    coLatlong = rd["co_latlong"]?.ToString(),
+                    coAddressOld = rd["co_address_old"]?.ToString(),
+                    coAddressNew = rd["co_address_new"]?.ToString(),
+                    coLatlongOld = rd["co_latlong_old"]?.ToString(),
+                    coLatlongNew = rd["co_latlong_new"]?.ToString(),
+
                     coCorrectZone = rd["co_correct_zone"]?.ToString(),
                     coReason = rd["co_reason"]?.ToString(),
                     requestReason = rd["request_reason"]?.ToString(),
