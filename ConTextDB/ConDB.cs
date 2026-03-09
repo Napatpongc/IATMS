@@ -1273,10 +1273,10 @@ namespace IATMS.contextDB
                 CommandType = CommandType.StoredProcedure
             };
 
-            // user ที่เรียก (ถ้าต้องใช้เรื่อง permission ใน SP)
+           
             cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = username;
             
-            // ---- payload filters ----
+       
             cmd.Parameters.Add("@start_date", SqlDbType.Date).Value =
                 payload.start_date.HasValue
                     ? payload.start_date.Value.ToDateTime(TimeOnly.MinValue)
@@ -1359,7 +1359,7 @@ namespace IATMS.contextDB
             cmd.Parameters.Add("@team", SqlDbType.VarChar, 50).Value =
                 (object?)payload.team ?? DBNull.Value;
 
-            // ✅ YYYY-MM (varchar(7)) -> ส่งเข้า SP
+  
             cmd.Parameters.Add("@start_date", SqlDbType.VarChar, 7).Value =
                 string.IsNullOrWhiteSpace(payload.start_month_year) ? (object)DBNull.Value : payload.start_month_year!.Trim();
 
@@ -1369,7 +1369,7 @@ namespace IATMS.contextDB
             await con.OpenAsync();
             await using var rd = await cmd.ExecuteReaderAsync();
 
-            // ชื่อต้องตรงกับ alias ที่ SP select ออกมา
+
             int iMonthYear = rd.GetOrdinal("monthYear");
             int iOAUser = rd.GetOrdinal("oaUser");
             int iFullName = rd.GetOrdinal("fullName");
