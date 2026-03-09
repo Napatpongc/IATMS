@@ -1484,6 +1484,7 @@ namespace IATMS.contextDB
 
             // ส่ง Parameters (เช็ค NULL ให้เรียบร้อย)
             cmd.Parameters.AddWithValue("@oa_user", username);
+            cmd.Parameters.AddWithValue("@fullName", (object)payload.full_name ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@startDate", (object)payload.start_date ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@endDate", (object)payload.end_date ?? DBNull.Value);
             cmd.Parameters.AddWithValue("@team_code", (object)payload.team_code ?? DBNull.Value);
