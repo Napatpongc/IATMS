@@ -1,4 +1,5 @@
-﻿using IATMS.Components;
+﻿using AppName_API.Components.Authorization;
+using IATMS.Components;
 using IATMS.contextDB;
 using IATMS.Models.Authentications;
 using IATMS.Models.Payloads;
@@ -6,8 +7,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
 using Microsoft.Data.SqlClient;
+using Microsoft.IdentityModel.Tokens;
 
 
 
@@ -37,9 +38,35 @@ namespace IATMS.Controllers
             {
                 return Unauthorized();
             }
-            var result = ConDB.GetHolidays(q.isActive, q.yearSearch);
+            try
+            {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_admin"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
+            try
+            {
+                var result = ConDB.GetHolidays(q.isActive, q.yearSearch);
             return Ok(result);
-
+            }
+            catch (SqlException ex)
+            {
+                return StatusCode(500, new { res_code = 500, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                // กรณี Error อื่นๆ
+                return Unauthorized(new
+                {
+                    res_code = 401,
+                    message = "สิทธิ์การเข้าใช้งานไม่ถูกต้องหรือหมดอายุ"
+                });
+            }
         }
 
         [HttpPost("postHolidays")]
@@ -53,6 +80,17 @@ namespace IATMS.Controllers
             catch
             {
                 return Unauthorized();
+            }
+            try
+            {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_admin"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
             }
             try
             {
@@ -90,9 +128,35 @@ namespace IATMS.Controllers
             {
                 return Unauthorized();
             }
-            var result = ConDB.GetHolidayYears();
+            try
+            {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_setup"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
+            try
+            {
+                var result = ConDB.GetHolidayYears();
             return Ok(result);
-
+            }
+            catch (SqlException ex)
+            {
+                return StatusCode(500, new { res_code = 500, message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                // กรณี Error อื่นๆ
+                return Unauthorized(new
+                {
+                    res_code = 401,
+                    message = "สิทธิ์การเข้าใช้งานไม่ถูกต้องหรือหมดอายุ"
+                });
+            }
         }
     }
 

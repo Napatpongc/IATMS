@@ -1,4 +1,5 @@
-﻿using IATMS.Components;
+﻿using AppName_API.Components.Authorization;
+using IATMS.Components;
 using IATMS.contextDB;
 using IATMS.Models.Authentications;
 using IATMS.Models.Payloads.AttendanceApproval;
@@ -33,6 +34,19 @@ namespace IATMS.Controllers
             {
                 return Unauthorized();
             }
+
+            try
+            {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_approve"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
+
             try
             {
                 var result = await ConDB.getAttApproval(info.username,search.Name,search.Team);
@@ -64,6 +78,17 @@ namespace IATMS.Controllers
             }
             try
             {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_approve"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
+            try
+            {
                 var result = await ConDB.getModalAttApproval(payload.username, payload.Date);
                 return Ok(result);
 
@@ -91,6 +116,17 @@ namespace IATMS.Controllers
             catch (Exception ex)
             {
                 return Unauthorized();
+            }
+            try
+            {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_approve"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
             }
             try
             {

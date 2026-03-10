@@ -1,4 +1,5 @@
-﻿using IATMS.Components;
+﻿using AppName_API.Components.Authorization;
+using IATMS.Components;
 using IATMS.contextDB;
 using IATMS.Models.Authentications;
 using IATMS.Models.Payloads.AttendanceChange;
@@ -36,6 +37,17 @@ namespace IATMS.Controllers
             }
             try
             {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_report", function: "func_rp_compensation"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
+            try
+            {
                 var result = await ConDB.getCompensation(info.username, search);
                 return Ok(result);
 
@@ -62,6 +74,17 @@ namespace IATMS.Controllers
             catch (Exception ex)
             {
                 return Unauthorized();
+            }
+            try
+            {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_report", function: "func_rp_compensation"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
             }
             try
             {

@@ -1,4 +1,5 @@
-﻿using IATMS.Components;
+﻿using AppName_API.Components.Authorization;
+using IATMS.Components;
 using IATMS.contextDB;
 using IATMS.Models.Authentications;
 using IATMS.Models.Payloads.AttendanceChange;
@@ -35,6 +36,17 @@ namespace IATMS.Controllers
             }
             try
             {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_approve"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
+            try
+            {
                 var result = await ConDB.getAttChange(info.username,search.startDate,search.endDate,search.dropdown);
                 return Ok(result);
 
@@ -61,6 +73,17 @@ namespace IATMS.Controllers
             catch (Exception ex)
             {
                 return Unauthorized();
+            }
+            try
+            {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_cico"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
             }
             try
             {
@@ -93,6 +116,17 @@ namespace IATMS.Controllers
             }
             try
             {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_cico"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
+            try
+            {
                 await ConDB.postAttChange(info.username, payload);
                 return Ok("Success for post");
 
@@ -119,6 +153,17 @@ namespace IATMS.Controllers
             catch (Exception ex)
             {
                 return Unauthorized();
+            }
+            try
+            {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_cico"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
             }
             try
             {

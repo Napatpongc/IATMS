@@ -1,4 +1,5 @@
-﻿using IATMS.Components;
+﻿using AppName_API.Components.Authorization;
+using IATMS.Components;
 using IATMS.contextDB;
 using IATMS.Models.Authentications;
 using IATMS.Models.Payloads.Leave;
@@ -30,7 +31,17 @@ namespace IATMS.Controllers
                 info = JwtToken.AccessTokenValidation(Request, _tokenValidationParameters);
             }
             catch (Exception) { return Unauthorized(); }
-
+            try
+            {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_approve"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
             try
             {
                 var result = await ConDB.GetLeaveApproval(info?.username, payload.Search, payload.Team);
@@ -50,7 +61,17 @@ namespace IATMS.Controllers
                 info = JwtToken.AccessTokenValidation(Request, _tokenValidationParameters);
             }
             catch (Exception) { return Unauthorized(); }
-
+            try
+            {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_approve"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
             try
             {
                 // ส่ง username ของ Admin และ Payload ไปที่ ConDB
