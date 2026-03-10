@@ -36,7 +36,7 @@ namespace IATMS.Controllers
             }
             try
             {
-                if (!AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_approve"))
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_cico"))
                 {
                     return Forbid();
                 }
