@@ -1354,7 +1354,7 @@ namespace IATMS.contextDB
             cmd.Parameters.Add("@oa_user", SqlDbType.VarChar, 50).Value = username;
 
             cmd.Parameters.Add("@search_text", SqlDbType.NVarChar, 200).Value =
-                (object?)payload.search_text ?? DBNull.Value;
+                (object?)payload.search_text ;
 
             cmd.Parameters.Add("@team", SqlDbType.VarChar, 50).Value =
                 (object?)payload.team ?? DBNull.Value;

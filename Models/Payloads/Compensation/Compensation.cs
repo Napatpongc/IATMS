@@ -1,7 +1,10 @@
-﻿namespace IATMS.Models.Payloads.Compensation
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace IATMS.Models.Payloads.Compensation
 {
     public class Pay_Compensation
     {
+        [DisplayFormat(ConvertEmptyStringToNull = false)]
         public string? search_text { get; set; }
         public string? team { get; set; }
 
