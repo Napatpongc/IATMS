@@ -1,4 +1,5 @@
-﻿using IATMS.Components;
+﻿using AppName_API.Components.Authorization;
+using IATMS.Components;
 using IATMS.contextDB;
 using IATMS.Models.Authentications;
 using IATMS.Models.Payloads;
@@ -38,6 +39,17 @@ namespace IATMS.Controllers
             }
             try
             {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_cico"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
+            try
+            {
                 var result = await ConDB.GetButton(info.username);
                 return Ok(result);
 
@@ -69,6 +81,17 @@ namespace IATMS.Controllers
             }
             try
             {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_cico"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
+            try
+            {
                 var result = await ConDB.GetCico(info.username,q.mode);
                 return Ok(result);
 
@@ -95,7 +118,17 @@ namespace IATMS.Controllers
             {
                 return Unauthorized();
             }
-
+            try
+            {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_cico"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
             try
             {
                 if (data == null)

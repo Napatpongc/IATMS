@@ -1,4 +1,5 @@
-﻿using AppName_API.Components.Messages;
+﻿using AppName_API.Components.Authorization;
+using AppName_API.Components.Messages;
 using AppName_API.Models.Responses.Authentication;
 using IATMS.Components;
 using IATMS.Configurations;
@@ -43,7 +44,17 @@ namespace IATMS.Controllers
             {
                 return Unauthorized();
             }
-
+            try
+            {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_admin"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
             var k = (q?.keyword ?? "").Trim();
             var result = ConDB.GetUserManage(k);
             return Ok(result);
@@ -61,7 +72,17 @@ namespace IATMS.Controllers
             {
                 return Unauthorized();
             }
-
+            try
+            {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_admin"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
             try
             {
                 payload.username = info.username;

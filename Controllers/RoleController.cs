@@ -1,13 +1,14 @@
-﻿using AppName_API.Models.Responses.Authentication;
+﻿using AppName_API.Components.Authorization;
+using AppName_API.Models.Responses.Authentication;
 using IATMS.Components;
 using IATMS.contextDB;
 using IATMS.Models.Authentications;
+using IATMS.Models.Payloads;
 using IATMS.Models.Responses;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using IATMS.Models.Payloads;
 using Microsoft.Data.SqlClient;
+using Microsoft.IdentityModel.Tokens;
 
 namespace IATMS.Controllers
 {
@@ -35,6 +36,17 @@ namespace IATMS.Controllers
             }
             try
             {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_setup"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
+            try
+            {
                 var rolesList = ConDB.GetRoles();
                 return Ok(rolesList);
             }
@@ -57,7 +69,17 @@ namespace IATMS.Controllers
             {
                 return Unauthorized();
             }
-
+            try
+            {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_setup"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
             try
             {
                 // ใส่ชื่อผู้ทำรายการจาก Token ลงใน payload

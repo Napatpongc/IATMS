@@ -1,4 +1,5 @@
-﻿using IATMS.Components;
+﻿using AppName_API.Components.Authorization;
+using IATMS.Components;
 using IATMS.contextDB;
 using IATMS.Models.Authentications;
 using IATMS.Models.Payloads;
@@ -32,7 +33,17 @@ namespace IATMS.Controllers
                 info = JwtToken.AccessTokenValidation(Request, _tokenValidationParameters);
             }
             catch (Exception) { return Unauthorized(); }
-
+            try
+            {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_cico"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
             try
             {
                 var result = await ConDB.GetLeaveRequest(info?.username, q.startDate, q.endDate, q.status);
@@ -53,7 +64,17 @@ namespace IATMS.Controllers
                 info = JwtToken.AccessTokenValidation(Request, _tokenValidationParameters);
             }
             catch (Exception) { return Unauthorized(); }
-            
+            try
+            {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_cico"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
             try
             {
                 var success = await ConDB.PostLeaveRequest(info.username , payload);
@@ -73,7 +94,17 @@ namespace IATMS.Controllers
                 info = JwtToken.AccessTokenValidation(Request, _tokenValidationParameters);
             }
             catch (Exception) { return Unauthorized(); }
-
+            try
+            {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_cico"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
             try
             {
                 var success = await ConDB.DeleteLeaveRequest(info?.username , payload);
