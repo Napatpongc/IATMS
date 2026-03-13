@@ -9,9 +9,12 @@
         public string ciThreshold { get; set; }
         public string coThreshold { get; set; }
         public string wpCondition { get; set; }
+        public string leaveStart { get; set; }
+        public string leaveEnd { get; set; }
+
     }
 
-   
+
 
     public class getCICO
     {

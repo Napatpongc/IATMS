@@ -635,6 +635,8 @@ namespace IATMS.contextDB
                     results.ciThreshold = rd["ci_threshold_time"]?.ToString();
                     results.coThreshold = rd["co_threshold_time"]?.ToString();
                     results.wpCondition = rd["wp_condition"]?.ToString();
+                    results.leaveStart = rd["leave_start_datetime"]?.ToString();
+                    results.leaveEnd = rd["leave_end_datetime"]?.ToString();
                 }
             }
             catch (Exception ex)
@@ -1267,7 +1269,7 @@ namespace IATMS.contextDB
             var results = new List<Res_AttendanceHistory>();
 
             await using var con = new SqlConnection(connectionString);
-            await using var cmd = new SqlCommand("dbo.getAttendanceHistory", con)
+            await using var cmd = new SqlCommand("dbo.getNewAttendanceHistory", con)
             {
                 CommandTimeout = Timeout,
                 CommandType = CommandType.StoredProcedure
