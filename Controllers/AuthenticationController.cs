@@ -43,11 +43,12 @@ namespace IATMS.Controllers
             //ldap
             try
             {
-                //using (var entry = new DirectoryEntry(Path, UserName, PassWord, AuthenticationTypes.Secure))
-                //{
-                //    var forceBind = entry.NativeObject;
-                //    isAuthenticated = true;
-                //}
+                string fullUserName = UserName.Contains("@") ? UserName : $"{UserName}@erm.local";
+                using (var entry = new DirectoryEntry(Path, fullUserName, PassWord, AuthenticationTypes.Secure))
+                {
+                    var forceBind = entry.NativeObject; 
+                    isAuthenticated = true;
+                }
             }
             catch (Exception ex)
             {
