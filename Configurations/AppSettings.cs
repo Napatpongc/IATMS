@@ -10,6 +10,7 @@
         public static string DatabaseConnectionString { get; } = app_setting.GetConnectionString(app_setting["Env:db"]);
         public static string LdapServer { get; } = app_setting["Ldap:Server"];
         public static string LdapPort { get; } = app_setting["Ldap:Port"];
+        public static string Version { get; } = app_setting["Version:version"];
         public static string LdapPath => $"LDAP://{LdapServer}:{LdapPort}";
 
         public static string LdapSearchUser = app_setting["LdapSearchUser"];
