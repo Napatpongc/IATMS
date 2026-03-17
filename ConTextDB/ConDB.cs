@@ -32,9 +32,6 @@ using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 using System.Data;
 using System.Runtime;
-using static IATMS.Models.Responses.CheckinCheckout.getButton;
-using static Microsoft.Extensions.Logging.EventSource.LoggingEventSource;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 namespace IATMS.contextDB
 {
     public class ConDB

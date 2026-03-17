@@ -15,7 +15,7 @@ namespace IATMS.Components
             {
                 string path = AppSettings.LdapPath;
                 // ใช้ตัวแปรจาก AppSettings หรือใส่ตรงๆ ตามที่คุณเทสสำเร็จ
-                PrincipalContext _context = new(ContextType.Domain, "192.168.1.112", "DC=iatms,DC=local", "ldapuser", "@Int1234");
+                PrincipalContext _context = new(ContextType.Domain,"192.168.1.101", "DC=erm,DC=local", "admin", "@Password123");
                 UserPrincipal _up = new(_context);
 
                 // ตั้งค่า Filter ตามพารามิเตอร์ที่ส่งมา
