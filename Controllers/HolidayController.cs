@@ -40,9 +40,12 @@ namespace IATMS.Controllers
             }
             try
             {
-                if (!AccessRole.IsAuthorize(info.username, menu: "menu_admin"))
+                bool isAdmin = AccessRole.IsAuthorize(info.username, menu: "menu_admin");
+                bool isStaffCICO = AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_cico");
+
+                if (!isAdmin && !isStaffCICO)
                 {
-                    return Forbid();
+                    return Forbid(); 
                 }
             }
             catch (Exception ex)

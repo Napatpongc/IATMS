@@ -632,6 +632,7 @@ namespace IATMS.contextDB
                     results.ciThreshold = rd["ci_threshold_time"]?.ToString();
                     results.coThreshold = rd["co_threshold_time"]?.ToString();
                     results.wpCondition = rd["wp_condition"]?.ToString();
+                    results.wpName = rd["wp_name"]?.ToString();
                     results.leaveStart = rd["leave_start_datetime"]?.ToString();
                     results.leaveEnd = rd["leave_end_datetime"]?.ToString();
                 }
