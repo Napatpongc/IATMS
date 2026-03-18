@@ -3,6 +3,7 @@ using IATMS.Components;
 using IATMS.contextDB;
 using IATMS.Models.Authentications;
 using IATMS.Models.Payloads;
+using IATMS.Models.Payloads.AttendanceChange;
 using IATMS.Models.Payloads.Leave;
 using IATMS.Models.Responses.Leave;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -52,6 +53,45 @@ namespace IATMS.Controllers
             catch (Exception ex)
             {
                 return StatusCode(500, ex.Message);
+            }
+        }
+        [HttpGet("getLeaveHoliday")]
+        public async Task<IActionResult> GetHolidayOnly([FromQuery] getHolidays search)
+        {
+            AccessTokenProps info;
+            try
+            {
+                info = JwtToken.AccessTokenValidation(Request, _tokenValidationParameters);
+            }
+            catch (Exception ex)
+            {
+                return Unauthorized();
+            }
+            try
+            {
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_attendance", function: "func_cico"))
+                {
+                    return Forbid();
+                }
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Source + " : " + ex.Message);
+            }
+            try
+            {
+                var result = ConDB.GetHolidayOnly(search.isActive, search.yearSearch);
+                return Ok(result);
+
+            }
+            catch (Exception ex)
+            {
+                return Unauthorized(new
+                {
+                    res_code = 401,
+                    message = "สิทธิ์การเข้าใช้งานไม่ถูกต้องหรือหมดอายุ"
+                });
+
             }
         }
 

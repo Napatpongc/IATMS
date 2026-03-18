@@ -970,6 +970,43 @@ namespace IATMS.contextDB
             return results;
         }
 
+        public static List<Res_HolidayOnly> GetHolidayOnly(bool isActive, int yearSearch)
+        {
+            var results = new List<Res_HolidayOnly>();
+            try
+            {
+                using var con = new SqlConnection(connectionString);
+                using var cmd = new SqlCommand("dbo.getHolidayOnly", con);
+
+                cmd.CommandTimeout = Timeout;
+                cmd.CommandType = CommandType.StoredProcedure;
+                cmd.Parameters.Add("@is_active", SqlDbType.Bit).Value = isActive;
+                cmd.Parameters.Add("@yearSearch", SqlDbType.Int).Value = yearSearch;
+
+
+                con.Open();
+                var rd = cmd.ExecuteReader();
+
+                while (rd.Read())
+                {
+                    var item = new Res_HolidayOnly();
+
+                    var dt = rd.GetDateTime(rd.GetOrdinal("holiday_date"));
+                    item.holidayDate = DateOnly.FromDateTime(dt);
+
+                    results.Add(item);
+                }
+                rd.Close();
+                cmd.Dispose();
+                con.Close();
+
+                return results;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+        }
         public static async Task<bool> PostLeaveRequest(string username, Pay_Leave data)
         {
             try

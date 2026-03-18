@@ -2,8 +2,10 @@
 using IATMS.Components;
 using IATMS.contextDB;
 using IATMS.Models.Authentications;
+using IATMS.Models.Payloads;
 using IATMS.Models.Payloads.AttendanceChange;
 using IATMS.Models.Payloads.CICO;
+using IATMS.Models.Responses.AtendanceChange;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -101,9 +103,8 @@ namespace IATMS.Controllers
 
             }
         }
-
-        [HttpPost("postAttChange")]
-        public async Task<IActionResult> postAttChange([FromBody] Pay_AttendanceChange_post payload)
+        [HttpPost("getHolidayOnly")]
+        public async Task<IActionResult> getHolidayOnly([FromQuery] getHolidays search)
         {
             AccessTokenProps info;
             try
@@ -127,9 +128,14 @@ namespace IATMS.Controllers
             }
             try
             {
-                await ConDB.postAttChange(info.username, payload);
-                return Ok("Success for post");
+                var holidays = ConDB.GetHolidayOnly(search.isActive, search.yearSearch);
 
+                if (holidays == null || holidays.Count == 0)
+                {
+                    return NotFound("No holidays found for the specified year.");
+                }
+
+                return Ok(holidays);
             }
             catch (Exception ex)
             {
@@ -138,7 +144,6 @@ namespace IATMS.Controllers
                     res_code = 401,
                     message = "สิทธิ์การเข้าใช้งานไม่ถูกต้องหรือหมดอายุ"
                 });
-
             }
         }
 
