@@ -103,9 +103,9 @@ namespace IATMS.Controllers
 
             }
         }
-        [HttpPost("getHolidayOnly")]
-        public async Task<IActionResult> getHolidayOnly([FromQuery] getHolidays search)
-        {
+
+        [HttpPost("postAttChange")]
+        public async Task<IActionResult> postAttChange([FromBody] Pay_AttendanceChange_post payload) {
             AccessTokenProps info;
             try
             {
@@ -128,14 +128,9 @@ namespace IATMS.Controllers
             }
             try
             {
-                var holidays = ConDB.GetHolidayOnly(search.isActive, search.yearSearch);
+                await ConDB.postAttChange(info.username, payload);
+                return Ok("Success for post");
 
-                if (holidays == null || holidays.Count == 0)
-                {
-                    return NotFound("No holidays found for the specified year.");
-                }
-
-                return Ok(holidays);
             }
             catch (Exception ex)
             {
@@ -144,8 +139,10 @@ namespace IATMS.Controllers
                     res_code = 401,
                     message = "สิทธิ์การเข้าใช้งานไม่ถูกต้องหรือหมดอายุ"
                 });
+
             }
         }
+
 
         [HttpDelete("deleteAttChange")]
         public async Task<IActionResult> deleteAttChange([FromQuery] Pay_ModalAttendanceChange payload)
