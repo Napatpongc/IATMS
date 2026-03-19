@@ -1471,9 +1471,9 @@ namespace IATMS.contextDB
                         staff.working_hour = new TimeOnly(0, 0);
                     }
 
-                    staff.approve_leave = rd["approve_leave"] != DBNull.Value ? Convert.ToInt32(rd["approve_leave"]) : 0;
-                    staff.pending_leave = rd["pending_leave"] != DBNull.Value ? Convert.ToInt32(rd["pending_leave"]) : 0;
-                    staff.reject_leave = rd["reject_leave"] != DBNull.Value ? Convert.ToInt32(rd["reject_leave"]) : 0;
+                    staff.approve = rd["approve"] != DBNull.Value ? Convert.ToInt32(rd["approve"]) : 0;
+                    staff.pending = rd["pending"] != DBNull.Value ? Convert.ToInt32(rd["pending"]) : 0;
+                    staff.reject = rd["reject"] != DBNull.Value ? Convert.ToInt32(rd["reject"]) : 0;
                     staff.displaydate = rd["displaydate"]?.ToString();
                     response = staff;
                 }
