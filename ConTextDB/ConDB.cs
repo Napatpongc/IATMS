@@ -1036,7 +1036,7 @@ namespace IATMS.contextDB
             }
             catch (Exception ex)
             {
-                throw new Exception("Error at PostLeaveRequest: " + ex.Message);
+                throw new Exception(ex.Message);
             }
         }
         public static async Task<bool> DeleteLeaveRequest(string username, Pay_Delete_Leave data)

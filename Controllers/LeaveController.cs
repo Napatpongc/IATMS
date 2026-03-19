@@ -9,6 +9,7 @@ using IATMS.Models.Responses.Leave;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using Microsoft.IdentityModel.Tokens;
 
 namespace IATMS.Controllers
@@ -122,7 +123,7 @@ namespace IATMS.Controllers
             }
             catch (Exception ex)
             {
-                return StatusCode(500, ex.Message);
+                return StatusCode(500, new { res_code = 500, message = ex.Message });
             }
         }
         [HttpDelete("deleteLeave")]
