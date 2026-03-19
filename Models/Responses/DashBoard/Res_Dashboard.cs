@@ -17,9 +17,9 @@
         public string ci_address { get; set; }
         public string co_address { get; set; }
         public TimeOnly working_hour { get; set; }
-        public int approve_leave { get; set; }
-        public int pending_leave { get; set; }
-        public int reject_leave { get; set; }
+        public int approve { get; set; }
+        public int pending{ get; set; }
+        public int reject { get; set; }
         public string displaydate { get; set; }
     }
 
