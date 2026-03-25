@@ -41,7 +41,7 @@ namespace IATMS.Controllers
             try
             {
 
-                if (!AccessRole.IsAuthorize(info.username, menu: "menu_admin"))
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_setup"))
                 {
                     return Forbid(); 
                 }
@@ -84,7 +84,7 @@ namespace IATMS.Controllers
             }
             try
             {
-                if (!AccessRole.IsAuthorize(info.username, menu: "menu_admin"))
+                if (!AccessRole.IsAuthorize(info.username, menu: "menu_setup"))
                 {
                     return Forbid();
                 }
