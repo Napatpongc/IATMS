@@ -11,6 +11,12 @@ namespace IATMS.Components
         public static Res_Profile GetUserProfile(string? oa_user = null, string? fname = null, string? lname = null)
         {
             Res_Profile res = new();
+            if (string.IsNullOrWhiteSpace(oa_user) &&
+                string.IsNullOrWhiteSpace(fname) &&
+                string.IsNullOrWhiteSpace(lname))
+            {
+                return res; // คืนค่า Res_Profile เปล่าๆ กลับไป (หรือจะ Return null ก็ได้แล้วแต่คุณออกแบบ)
+            }
             try
             {
                 string path = AppSettings.LdapPath;
@@ -19,9 +25,9 @@ namespace IATMS.Components
                 UserPrincipal _up = new(_context);
 
                 // ตั้งค่า Filter ตามพารามิเตอร์ที่ส่งมา
-                if (!string.IsNullOrEmpty(oa_user)) _up.SamAccountName = oa_user;
-                    if (!string.IsNullOrEmpty(fname)) _up.GivenName = fname;
-                    if (!string.IsNullOrEmpty(lname)) _up.Surname = lname;
+                if (!string.IsNullOrWhiteSpace(oa_user)) _up.SamAccountName = oa_user.Trim();
+                if (!string.IsNullOrWhiteSpace(fname)) _up.GivenName = fname.Trim();
+                if (!string.IsNullOrWhiteSpace(lname)) _up.Surname = lname.Trim();
 
                 using (PrincipalSearcher _search = new PrincipalSearcher(_up))
                 {
@@ -32,6 +38,23 @@ namespace IATMS.Components
                         if (usrPrn != null)
                         {
                             var directoryEntry = (DirectoryEntry)usrPrn.GetUnderlyingObject();
+
+                            string ad_oaUser = GetValue(directoryEntry, "sAMAccountName");
+                            string ad_fname = GetValue(directoryEntry, "givenName");
+                            string ad_lname = GetValue(directoryEntry, "sn");
+
+                            if (!string.IsNullOrWhiteSpace(oa_user) &&
+                            !string.Equals(ad_oaUser, oa_user, StringComparison.OrdinalIgnoreCase))
+                                return null;
+
+                            if (!string.IsNullOrWhiteSpace(fname) &&
+                                !string.Equals(ad_fname, fname, StringComparison.OrdinalIgnoreCase))
+                                return null;
+
+                            if (!string.IsNullOrWhiteSpace(lname) &&
+                                !string.Equals(ad_lname, lname, StringComparison.OrdinalIgnoreCase))
+                                return null;
+
 
                             // Mapping ตาม Model Res_Profile ของคุณ
                             res.oa_user = GetValue(directoryEntry, "sAMAccountName"); // nattapol.prai
