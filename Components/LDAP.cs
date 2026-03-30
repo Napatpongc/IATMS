@@ -11,11 +11,15 @@ namespace IATMS.Components
         public static Res_Profile GetUserProfile(string? oa_user = null, string? fname = null, string? lname = null)
         {
             Res_Profile res = new();
+            oa_user = oa_user?.Trim();
+            fname = fname?.Trim();
+            lname = lname?.Trim();
+
             if (string.IsNullOrWhiteSpace(oa_user) &&
                 string.IsNullOrWhiteSpace(fname) &&
                 string.IsNullOrWhiteSpace(lname))
             {
-                return res; // คืนค่า Res_Profile เปล่าๆ กลับไป (หรือจะ Return null ก็ได้แล้วแต่คุณออกแบบ)
+                return res;
             }
             try
             {
