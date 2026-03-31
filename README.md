@@ -296,32 +296,13 @@ dotnet run
 
 ---
 
-## 10. Known Issues & Security Notes
 
-### ⚠️ Security — ต้องแก้ไขก่อน Deploy
 
-| รายการ | สถานะ | วิธีแก้ไข |
-|--------|-------|---------|
-| JWT Secret อยู่ใน `appsettings.json` | ⚠️ ต้องแก้ | ย้ายไป Environment Variable หรือ Azure Key Vault |
-| DB password อยู่ใน config | ⚠️ ต้องแก้ | ใช้ Secret Manager หรือ environment variable |
-| LDAP password อยู่ใน config | ⚠️ ต้องแก้ | เช่นเดียวกัน |
-| `ValidateIssuer = false` ใน JWT | ⚠️ ควรแก้ | เปิดใช้ IssuerSigningKey validation |
-| `ValidateAudience = false` ใน JWT | ⚠️ ควรแก้ | เพิ่ม audience validation |
-
-### ข้อจำกัดปัจจุบัน
-
-- ยังไม่มี Unit Tests
-- ยังไม่มี CI/CD Pipeline
-- Swagger เปิดเฉพาะ Development environment
-
----
-
-## 11. Contact & Handover
+## 10. Contact & Handover
 
 | รายการ | รายละเอียด |
 |--------|----------|
 | ผู้พัฒนา | ณภัทรพงศ์ แช่มช้อย, ณัฏฐพล ไพรรื่นรมย์ |
-| Repository | https://github.com/Napatpongc/IATMS |
 | Version | 1.0.0 |
 | วันส่งมอบ | 31/03/2026 |
 
