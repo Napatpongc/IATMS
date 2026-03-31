@@ -1,7 +1,6 @@
-# IATMS — Intern Attendance Tracking Management System
+# IATMS (Backend)
 
-> **Backend REST API** สำหรับระบบติดตามการเข้างานของนักศึกษาฝึกงาน  
-> พัฒนาด้วย ASP.NET Core (.NET 10) · SQL Server · JWT Authentication · LDAP (Active Directory)
+> **Backend API** ระบบติดตามการเข้างานของนักศึกษาฝึกงาน  
 
 ---
 
@@ -16,21 +15,14 @@
 7. [Authentication Flow](#7-authentication-flow)
 8. [Database](#8-database)
 9. [Environment Guide](#9-environment-guide)
-10. [Known Issues & Security Notes](#10-known-issues--security-notes)
-11. [Contact & Handover](#11-contact--handover)
+10. [Contact & Handover](#11-contact--handover)
+
 
 ---
 
 ## 1. Project Overview
 
 **IATMS (Intern Attendance Tracking Management System)** คือระบบ Backend API สำหรับจัดการและติดตามการเข้างานของนักศึกษาฝึกงานภายในองค์กร
-
-**ขอบเขตของระบบ:**
-- จัดการข้อมูลนักศึกษาฝึกงาน (CRUD)
-- บันทึกและติดตามข้อมูลการเข้างาน (Check-in / Check-out)
-- ระบบ Authentication ผ่าน LDAP (Active Directory) ขององค์กร
-- ออก JWT Token สำหรับการเข้าถึง API
-- รองรับการดึงรายงานการเข้างาน
 
 > โปรเจกต์นี้เป็นส่วน **Backend API** เท่านั้น — Frontend อยู่ใน repository แยก
 
@@ -43,10 +35,10 @@
 | Framework | ASP.NET Core | .NET 10 |
 | ภาษา | C# | 13+ |
 | Database | Microsoft SQL Server | 2019+ |
-| ORM / DB Access | ADO.NET (`Microsoft.Data.SqlClient`) | 6.1.4 |
+| DB Libary | ADO.NET (`Microsoft.Data.SqlClient`) | 6.1.4 |
 | Authentication | JWT Bearer + LDAP (Active Directory) | — |
-| Directory Services | `System.DirectoryServices` | 10.0.2 |
-| API Documentation | Swagger (Swashbuckle) | 10.1.0 |
+
+
 
 ---
 
@@ -55,10 +47,10 @@
 | รายการ | ความต้องการ |
 |--------|------------|
 | .NET SDK | 10.0 หรือสูงกว่า |
-| SQL Server | 2019 หรือสูงกว่า (หรือ Azure SQL) |
+| SQL Server | 2019 หรือสูงกว่า |
 | LDAP Server | Active Directory ที่เข้าถึงได้จาก network |
 | OS | Windows / Linux / macOS (ที่รองรับ .NET 10) |
-| IDE (แนะนำ) | Visual Studio 2022 / VS Code + C# extension |
+
 
 ตรวจสอบ .NET version:
 ```bash
@@ -88,7 +80,7 @@ dotnet restore
 คัดลอกและแก้ไขไฟล์ configuration (ดูรายละเอียดใน [Section 5](#5-configuration)):
 
 ```bash
-# แก้ไขค่าใน appsettings.json หรือสร้าง appsettings.Development.json
+# แก้ไขค่าใน appsettings.json 
 ```
 
 ### 4.4 รันโปรเจกต์
@@ -100,14 +92,6 @@ dotnet run
 API จะเปิดที่:
 - `https://localhost:7xxx` (HTTPS)
 - `http://localhost:5xxx` (HTTP)
-
-### 4.5 เปิด Swagger UI
-
-```
-https://localhost:7xxx/swagger
-```
-
-> Swagger จะแสดงเฉพาะใน Development environment เท่านั้น
 
 ---
 
@@ -180,10 +164,7 @@ IATMS/
 ├── ConTextDB/                  # Database context
 │   └── ...                    # SQL connection, query helpers
 │
-├── Controllers/                # API Endpoints (HTTP layer)
-│   ├── AuthController.cs      # Login, Refresh Token
-│   ├── AttendanceController.cs # บันทึก/ดึงข้อมูลการเข้างาน
-│   ├── InternController.cs    # จัดการข้อมูลนักศึกษาฝึกงาน
+├── Controllers/                # API Endpoints (HTTP layer)  
 │   └── ...
 │
 ├── Models/                     # Data models / DTOs
@@ -195,9 +176,7 @@ IATMS/
 │
 ├── Program.cs                  # Entry point — middleware pipeline
 ├── appsettings.json            # Configuration (อย่าใส่ secret จริง)
-├── appsettings.Development.json
-├── IATMS.csproj               # Project file / dependencies
-└── IATMS.http                 # HTTP test file (VS / VS Code)
+
 ```
 
 ### คำอธิบายแต่ละ Layer
@@ -259,15 +238,6 @@ password=DB_PASSWORD;
 MultipleActiveResultSets=True;
 TrustServerCertificate=True;
 ```
-
-### ตารางหลัก (โครงสร้างโดยสังเขป)
-
-| ตาราง | คำอธิบาย |
-|-------|---------|
-| `Interns` | ข้อมูลนักศึกษาฝึกงาน |
-| `Attendance` | บันทึกการเข้า-ออกงาน |
-| `Users` | ผู้ใช้ระบบ (ดึงจาก LDAP) |
-
 ---
 
 ## 9. Environment Guide
@@ -297,12 +267,12 @@ dotnet run
 ---
 
 
-
-## 10. Contact & Handover
+## 11. Contact & Handover
 
 | รายการ | รายละเอียด |
 |--------|----------|
 | ผู้พัฒนา | ณภัทรพงศ์ แช่มช้อย, ณัฏฐพล ไพรรื่นรมย์ |
+| Repository | https://github.com/Napatpongc/IATMS |
 | Version | 1.0.0 |
 | วันส่งมอบ | 31/03/2026 |
 
